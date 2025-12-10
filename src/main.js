@@ -196,80 +196,32 @@ rgbeLoader.load(
 
 // Matahari dengan Soft Shadows
 const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
-sunLight.position.set(50, 40, 50);
+
+// --- SETTING MANUAL HASIL DEBUGGING ---
+// Masukkan angka final yang kamu dapatkan dari GUI di sini:
+const sunPosition = { x: 50, y: 100, z: 50 }; // Arah datang cahaya
+const shadowSize = 300; // Luas area bayangan (semakin besar, area makin luas tapi resolusi turun)
+const shadowFar = 500;  // Jarak render bayangan terjauh
+
+sunLight.position.set(sunPosition.x, sunPosition.y, sunPosition.z);
 sunLight.castShadow = true;
 
-// -- SETTING BAYANGAN AGAR MULUS (4K Texture) --
+// Kualitas Bayangan
 sunLight.shadow.mapSize.width = 4096; 
 sunLight.shadow.mapSize.height = 4096;
-// Radius > 0 membuat pinggiran bayangan kabur (blur) seperti Blender
-sunLight.shadow.radius = 1; 
-sunLight.shadow.bias = -0.0005; 
+sunLight.shadow.bias = -0.0005; // Mengurangi glitch garis-garis
+sunLight.shadow.radius = 2;     // Blur pinggiran bayangan
 
-// Area jangkauan bayangan
-const d = 100;
-sunLight.shadow.camera.left = -d;
-sunLight.shadow.camera.right = d;
-sunLight.shadow.camera.top = d;
-sunLight.shadow.camera.bottom = -d;
+// Penerapan Area Bayangan
+sunLight.shadow.camera.left = -shadowSize;
+sunLight.shadow.camera.right = shadowSize;
+sunLight.shadow.camera.top = shadowSize;
+sunLight.shadow.camera.bottom = -shadowSize;
 sunLight.shadow.camera.near = 0.5;
-sunLight.shadow.camera.far = 500;
+sunLight.shadow.camera.far = shadowFar;
 
 scene.add(sunLight);
 
-// =========================================
-// DEBUGGING TOOLS (HELPERS)
-// =========================================
-
-// 1. Helper Arah Matahari (Garis Kuning)
-// Menunjukkan dari mana datangnya sinar
-const sunLightHelper = new THREE.DirectionalLightHelper(sunLight, 5);
-scene.add(sunLightHelper);
-
-// 2. Helper Area Bayangan (Kotak Garis-garis)
-// PENTING: Hanya objek di DALAM kotak ini yang akan menghasilkan bayangan.
-const shadowHelper = new THREE.CameraHelper(sunLight.shadow.camera);
-scene.add(shadowHelper);
-
-// 3. GUI Control (Panel Pengatur Real-time)
-// Ini akan memunculkan menu di pojok kanan atas untuk geser matahari
-const gui = new GUI();
-
-// Folder Posisi Matahari
-const folderSun = gui.addFolder('Posisi Matahari');
-folderSun.add(sunLight.position, 'x', -500, 500).onChange(updateShadow);
-folderSun.add(sunLight.position, 'y', 0, 500).onChange(updateShadow);
-folderSun.add(sunLight.position, 'z', -500, 500).onChange(updateShadow);
-folderSun.add(sunLight, 'intensity', 0, 10).name('Kekuatan Cahaya');
-
-// Folder Area Jangkauan Bayangan (Shadow Camera)
-const folderShadow = gui.addFolder('Area Bayangan (Shadow Box)');
-const shadowParams = { 
-    d: 100, // Ukuran default sesuai kodemu (d=100)
-    bias: -0.0005 
-};
-
-folderShadow.add(shadowParams, 'd', 50, 1000).name('Ukuran Area').onChange((v) => {
-    // Update ukuran kamera bayangan saat slider digeser
-    sunLight.shadow.camera.left = -v;
-    sunLight.shadow.camera.right = v;
-    sunLight.shadow.camera.top = v;
-    sunLight.shadow.camera.bottom = -v;
-    sunLight.shadow.camera.updateProjectionMatrix();
-    shadowHelper.update();
-});
-
-folderShadow.add(sunLight.shadow, 'bias', -0.01, 0.01, 0.0001).name('Shadow Bias');
-
-function updateShadow() {
-    sunLight.target.updateMatrixWorld();
-    sunLightHelper.update();
-    shadowHelper.update();
-}
-
-// Buka folder secara default
-folderSun.open();
-folderShadow.open();
 
 // =========================================
 // 4. LOAD MODEL
@@ -353,7 +305,7 @@ function animate() {
         // Kita tidak perlu direction vector khusus untuk Y karena langsung akses velocity.y
         
         // --- KECEPATAN ---
-        const speed = 50.0; // Kecepatan gerak (bisa diatur)
+        const speed = 100.0; // Kecepatan gerak (bisa diatur)
 
         // Akselerasi Horizontal
         if (moveForward || moveBackward) velocity.z -= direction.z * speed * delta;

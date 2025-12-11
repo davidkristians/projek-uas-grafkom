@@ -24,8 +24,8 @@ export function setupLighting(scene) {
     sunLight.castShadow = true;
 
     // Shadow Settings
-    sunLight.shadow.mapSize.width = 4096; 
-    sunLight.shadow.mapSize.height = 4096;
+    sunLight.shadow.mapSize.width = 1024; 
+    sunLight.shadow.mapSize.height = 1024;
     sunLight.shadow.bias = -0.0005;
     sunLight.shadow.radius = 2; 
 

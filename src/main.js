@@ -25,6 +25,7 @@ loadMap(scene);
 // 5. Handle Resize
 handleResize(camera, renderer, composer);
 
+
 // 6. Animation Loop
 function animate() {
     requestAnimationFrame(animate);
@@ -39,3 +40,12 @@ function animate() {
 }
 
 animate();
+
+
+// Tambahkan di paling bawah src/main.js untuk cek
+const gl = renderer.domElement.getContext('webgl2');
+const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+const rendererValue = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+
+console.log("GPU yang aktif:", rendererValue); 
+// Cek Console browser (F12). Harusnya muncul "NVIDIA GeForce RTX 3050"

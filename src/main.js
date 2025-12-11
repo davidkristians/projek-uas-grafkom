@@ -1,11 +1,11 @@
-// src/main.js
 import { createRenderer } from './core/renderer.js';
 import { createCamera, handleResize } from './core/cameraManager.js';
 import { createScene, createComposer } from './core/sceneManager.js';
 import { setupLighting } from './core/lighting.js';
 import { clock } from './core/timeline.js';
 import { FreeRoamControls } from './controls/FreeRoamControls.js';
-import { loadMap } from './objects/MinecraftMap.js';
+import { AssetManager } from './managers/AssetManager.js';
+import { StoryManager } from './managers/StoryManager.js';
 
 // 1. Setup Core System
 const renderer = createRenderer();
@@ -13,39 +13,50 @@ const camera = createCamera();
 const scene = createScene();
 const composer = createComposer(renderer, scene, camera);
 
-// 2. Setup Lighting & Environment
-setupLighting(scene);
+// 2. Setup Lighting
+const { sunLight } = setupLighting(scene);
 
-// 3. Setup Controls
+// 3. Setup Controls (Awalnya disabled oleh StoryManager)
 const playerControls = new FreeRoamControls(camera, document.body);
 
-// 4. Load Objects
-loadMap(scene);
+// 4. Setup Managers
+const assetManager = new AssetManager();
+let director = null; 
 
-// 5. Handle Resize
+// 5. Load Assets & Start Movie
+assetManager.loadAssets(() => {
+    console.log("Assets Ready! Starting Movie...");
+    
+    director = new StoryManager(scene, camera, assetManager, sunLight, playerControls);
+    director.startScene1();
+});
+
+// 6. Handle Resize
 handleResize(camera, renderer, composer);
 
-
-// 6. Animation Loop
+// 7. Animation Loop
 function animate() {
     requestAnimationFrame(animate);
-
     const delta = clock.getDelta();
 
-    // Update Controls Logic
+    // A. Update Cinematic (Jika aktif)
+    if (director) {
+        director.update(delta);
+    }
+
+    // B. Update Free Roam (Jika aktif)
     playerControls.update(delta, camera);
 
-    // Render Scene (Gunakan Composer untuk GTAO/Bloom)
+    // Render Scene
     composer.render();
 }
 
 animate();
 
-
-// Tambahkan di paling bawah src/main.js untuk cek
-const gl = renderer.domElement.getContext('webgl2');
-const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-const rendererValue = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-
-console.log("GPU yang aktif:", rendererValue); 
-// Cek Console browser (F12). Harusnya muncul "NVIDIA GeForce RTX 3050"
+// Debug Tool: Tekan P untuk cek koordinat
+window.addEventListener('keydown', (event) => {
+    if (event.code === 'KeyP') {
+        const p = camera.position;
+        console.log(`📍 ${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}`);
+    }
+});

@@ -40,4 +40,5 @@ export function setupLighting(scene) {
     sunLight.shadow.camera.far = shadowFar;
 
     scene.add(sunLight);
+    return { sunLight };
 }

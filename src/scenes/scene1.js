@@ -14,12 +14,20 @@ export class Scene1 {
         const map = this.assets.get('map');
         if (map) {
             this.scene.add(map);
-            map.position.set(0, 0, 0); 
+            map.position.set(0, 0, 0);
         }
+        console.log("=== DAFTAR OBJEK DI MAP ===");
+        map.traverse((child) => {
+            // Filter: Hanya tampilkan objek yang namanya mengandung kata 'door' atau 'pintu'
+            if (child.isMesh && (child.name.toLowerCase().includes('door') || child.name.toLowerCase().includes('pintu'))) {
+                console.log("KETEMU POTENSI PINTU:", child.name);
+            }
+        });
+        console.log("===========================");
 
         // 2. Masukkan STEVE (Diambil dari AssetManager)
         this.steve = this.assets.get('steve');
-        
+
         // Simpan koordinat pusat Steve untuk referensi perabotan
         const roomX = -27.53;
         const roomY = 18.85;
@@ -29,18 +37,18 @@ export class Scene1 {
             console.log("✅ Steve berhasil ditambahkan ke Scene!");
 
             // --- POSISI STEVE ---
-            this.steve.position.set(roomX, roomY, roomZ); 
-            
+            this.steve.position.set(roomX, roomY, roomZ);
+
             // Rotasi & Scale
-            this.steve.rotation.y = Math.PI; 
-            this.steve.scale.set(0.05, 0.05, 0.05);  
-            
+            this.steve.rotation.y = Math.PI;
+            this.steve.scale.set(0.05, 0.05, 0.05);
+
             this.scene.add(this.steve);
 
             // --- ANIMASI STEVE ---
             const mixer = this.steve.userData.mixer;
             const anims = this.steve.userData.animations;
-            
+
             if (mixer && anims.length > 0) {
                 mixer.clipAction(anims[0]).play();
             }
@@ -55,8 +63,8 @@ export class Scene1 {
         const chest = this.assets.get('chest');
         if (chest) {
             chest.position.set(-25.51, 18.03, 34.49); // Geser X +2
-            chest.scale.set(0.63, 0.63, 0.63); 
-            chest.rotation.y = -Math.PI / 2; 
+            chest.scale.set(0.63, 0.63, 0.63);
+            chest.rotation.y = -Math.PI / 2;
             this.scene.add(chest);
         }
 
@@ -73,9 +81,12 @@ export class Scene1 {
         if (furnace) {
             furnace.position.set(-27.03, 21.04, 32.045); // Geser X kiri, Z belakang
             furnace.scale.set(0.04, 0.04, 0.04);
-            furnace.rotation.y = Math.PI / 4; 
+            furnace.rotation.y = Math.PI / 4;
             furnace.rotation.x = THREE.MathUtils.degToRad(90);
             this.scene.add(furnace);
         }
+
+
     }
+
 }

@@ -60,3 +60,48 @@ window.addEventListener('keydown', (event) => {
         console.log(`📍 ${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}`);
     }
 });
+import * as THREE from 'three';
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+    // Jika pointer terkunci (sedang main), kita anggap klik di tengah layar (crosshair)
+    // Jika pointer bebas (ada kursor mouse), kita ikutin posisi kursor
+    if (document.pointerLockElement) {
+        mouse.x = 0;
+        mouse.y = 0;
+    } else {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    // Tembakkan sinar dari kamera
+    raycaster.setFromCamera(mouse, camera);
+
+    // Cek objek apa yang kena tembak
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0) {
+        const hitObject = intersects[0].object;
+        
+        console.log("🎯 OBJEK TERDETEKSI:");
+        console.log("-----------------------");
+        console.log("Nama Object :", hitObject.name);
+        console.log("Nama Parent :", hitObject.parent ? hitObject.parent.name : 'Tidak ada');
+        console.log("Tipe        :", hitObject.type);
+        console.log("-----------------------");
+
+        // [Optional] Efek Kedip Merah (Visual Feedback)
+        // Agar kamu yakin objek mana yang kena klik
+        if (hitObject.material) {
+            const originalEmissive = hitObject.material.emissive ? hitObject.material.emissive.getHex() : 0x000000;
+            
+            // Ubah jadi merah terang
+            if(hitObject.material.emissive) hitObject.material.emissive.setHex(0xff0000);
+            
+            // Balikin warna asli setelah 0.5 detik
+            setTimeout(() => {
+                if(hitObject.material.emissive) hitObject.material.emissive.setHex(originalEmissive);
+            }, 500);
+        }
+    }});

@@ -10,7 +10,8 @@ export class Scene1Shots {
             // --- ISI TITIK TENGAH SESUAI SCREENSHOT ANDA ---
             new THREE.Vector3(17.01, 63.03, 100.51),       // Titik 2: (Contoh - Ganti koordinatnya)
             new THREE.Vector3(-22.22, 38.04, 103.21),        // Titik 3: (Contoh - Ganti koordinatnya)
-            new THREE.Vector3(-26.56, 18.94, 44.17),      // Titik 4: (Contoh - Ganti koordinatnya)
+            new THREE.Vector3(-26.56, 18.94, 44.17),  
+            new THREE.Vector3( -27.06, 19.19, 35.11),    // Titik 4: (Contoh - Ganti koordinatnya)
             
             new THREE.Vector3(-26, 19.84, 34.99) // Titik 5: END (Dalam Rumah)
         ]);

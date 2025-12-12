@@ -19,12 +19,41 @@ export class StoryManager {
         this.sceneStep = 1;
         this.timer = 0;
 
+        // --- BUAT TEKS MELAYANG (Subtitle) ---
+        this.subtitle = this.createSubtitle("WELCOME TO STEVE'S HOUSE");
+
         // Shortcut SKIP (Tekan R)
         window.addEventListener('keydown', (event) => {
             if (event.code === 'KeyR' && this.isCinematic) {
                 this.forceFreeRoam();
             }
         });
+    }
+    // --- FUNGSI MEMBUAT ELEMEN TEKS ---
+    createSubtitle(text) {
+        const div = document.createElement('div');
+        div.innerText = text;
+        div.style.position = 'absolute';
+        
+        // --- LOGIKA TENGAH LAYAR ---
+        div.style.top = '40%'; 
+        div.style.left = '50%';
+        // Geser balik sebesar 50% dari ukuran teks itu sendiri agar pas tengah
+        div.style.transform = 'translate(-50%, -50%)'; 
+        
+        div.style.color = 'white';
+        div.style.fontFamily = "'Minecraft', 'Arial', sans-serif"; 
+        div.style.fontSize = '60px'; // Saya besarkan biar lebih sinematik
+        div.style.fontWeight = 'bold';
+        div.style.textShadow = '4px 4px 8px black';
+        div.style.opacity = '0'; // Mulai transparan
+        div.style.transition = 'opacity 1s ease-in-out'; 
+        div.style.pointerEvents = 'none'; 
+        div.style.width = '100%'; // Agar text-align center bekerja
+        div.style.textAlign = 'center';
+        
+        document.body.appendChild(div);
+        return div;
     }
 
     startScene1() {
@@ -53,6 +82,12 @@ export class StoryManager {
             // PANGGIL ANIMASI DARI FILE TERPISAH
             this.scene1Shots.update(this.camera, progress);
 
+            if (progress > 0.6 && progress < 0.8) {
+                this.subtitle.style.opacity = '1'; // Muncul
+            } else {
+                this.subtitle.style.opacity = '0'; // Hilang
+            }
+
             // Cek Selesai
             if (progress >= 1.0) {
                 console.log("Adegan 1 Selesai.");
@@ -71,6 +106,9 @@ export class StoryManager {
         if (mode === 'FREEROAM') {
             this.isCinematic = false;
             this.sceneStep = 0;
+
+            if (this.subtitle) this.subtitle.style.opacity = '0';
+
             console.log("🎮 Mode: Free Roam");
             
             if (this.controls) {

@@ -19,6 +19,8 @@ export class AssetManager {
             { name: 'chest', url: '/resources/scene1/Chest.glb' },
             { name: 'torch', url: '/resources/scene1/Torch.glb' },
             { name: 'pickaxe', url: '/resources/scene1/Pickaxe.glb' },
+            { name: 'door', url: '/resources/scene1/wooden_door.glb' },
+            { name: 'door2', url: '/resources/scene1/wooden_door.glb' },
         ];
 
         let loadedCount = 0;

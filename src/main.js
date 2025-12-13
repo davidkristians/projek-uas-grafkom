@@ -6,6 +6,7 @@ import { clock } from './core/timeline.js';
 import { FreeRoamControls } from './controls/FreeRoamControls.js';
 import { AssetManager } from './managers/AssetManager.js';
 import { StoryManager } from './managers/StoryManager.js';
+import './style.css'; // Add this if you haven't already
 
 // 1. Setup Core System
 const renderer = createRenderer();

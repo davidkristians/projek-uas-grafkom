@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Scene1 } from '../scenes/Scene1.js';
+import { Scene1 } from '../scenes/scene1.js';
 import { Scene1Shots } from '../animations/Scene1Shots.js'; 
 
 export class StoryManager {
@@ -102,44 +102,30 @@ export class StoryManager {
             const door2 = this.scene1Objects.door2; // Ambil pintu dari Scene1
             
             if (door) {
-                // Setting Waktu Buka Pintu
-                const startOpen = 0.45; // Mulai buka saat progress 85%
-                const endOpen = 0.75;   // Selesai buka saat progress 95%
+                const startOpen = 0.45; 
+                const endOpen = 0.75;   
 
-                //ini parameter utk pintu 1
+                const startRot = THREE.MathUtils.degToRad(0);   
+                const targetRot = THREE.MathUtils.degToRad(-90); 
+                const startX=-27.5; 
+                const targetX= -28.25; 
 
-                // Rotasi Target (135 Derajat)
-                const startRot = THREE.MathUtils.degToRad(0);   // Posisi Tutup
-                const targetRot = THREE.MathUtils.degToRad(-90); // Posisi Buka (Ganti -135 jika arah terbalik)
-
-                const startX=-27.5; // Posisi Tutup
-                const targetX= -28.25; // Posisi Buka (Ganti -0.5 jika arah terbalik)
-
-                //ini parameter utk pintu 2
-                const startRot2 = THREE.MathUtils.degToRad(180);   // Posisi Tutup
-                const targetRot2 = THREE.MathUtils.degToRad(270); // Posisi Buka (Ganti 45 jika arah terbalik)
-
-                const startX2=-26.5; // Posisi Tutup
-                const targetX2= -25.75; // Posisi Buka (Ganti 0.5 jika arah terbalik)
+                const startRot2 = THREE.MathUtils.degToRad(180);   
+                const targetRot2 = THREE.MathUtils.degToRad(270); 
+                const startX2=-26.5; 
+                const targetX2= -25.75; 
 
                 if (progress >= startOpen && progress <= endOpen) {
-                    // Hitung persentase bukaan pintu (0.0 sampai 1.0)
                     const doorProgress = (progress - startOpen) / (endOpen - startOpen);
-                    
-                    // Gerakkan pintu halus (Lerp)
                     door.rotation.y = THREE.MathUtils.lerp(startRot, targetRot, doorProgress);
                     door.position.x = THREE.MathUtils.lerp(startX, targetX, doorProgress);
 
-
-                    //gerakkan pintu 2
                     door2.rotation.y = THREE.MathUtils.lerp(startRot2, targetRot2, doorProgress);
                     door2.position.x = THREE.MathUtils.lerp(startX2, targetX2, doorProgress);
                 } 
                 else if (progress > endOpen) {
-                    // Pastikan pintu tetap terbuka penuh setelah lewat waktunya
                     door.rotation.y = targetRot;
                     door.position.x = targetX;
-
                     door2.rotation.y = targetRot2;
                     door2.position.x = targetX2;
                 }
@@ -153,9 +139,6 @@ export class StoryManager {
             }
         } 
     }
-
-    // --- FUNGSI UI (Subtitle, Fade, Bars) --- //
-    // (Tidak ada perubahan di bawah ini, sama seperti sebelumnya)
 
     createSubtitle(text) {
         const div = document.createElement('div');
@@ -250,9 +233,12 @@ export class StoryManager {
             console.log("🎮 Mode: Free Roam");
             
             if (this.controls) {
+                // [BARU] Setup Collision dari Scene 1
+                const walls = this.scene1Objects.getColliders();
+                this.controls.setColliders(walls);
+
                 this.controls.enabled = true; 
                 
-                // Pastikan pintu terbuka saat masuk free roam (opsional)
                 const door = this.scene1Objects.door;
                 if(door) door.rotation.y = THREE.MathUtils.degToRad(135);
 

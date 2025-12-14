@@ -6,6 +6,10 @@ export class Scene1 {
         this.assets = assetManager;
         this.steve = null; 
         this.door = null; // Wadah untuk pintu baru
+        this.door2 = null;
+
+        // [BARU] Array untuk menyimpan objek padat (Collider)
+        this.colliders = []; 
     }
 
     setup() {
@@ -16,48 +20,39 @@ export class Scene1 {
         if (map) {
             this.scene.add(map);
             map.position.set(0, 0, 0); 
-            // Tidak perlu lagi cari-cari pintu di dalam map
+            
+            // [BARU] Masukkan Map ke Collision (Kecuali Air & Rumput)
+            map.traverse((child) => {
+                if (child.isMesh) {
+                    if (!child.name.includes('water') && !child.name.includes('grass')) {
+                        this.colliders.push(child);
+                    }
+                }
+            });
         }
 
         // 2. PINTU BARU (Wooden Door)
         this.door = this.assets.get('door');
         if (this.door) {
-            // Koordinat dari Anda: -26.96, 19.36, 35.46
             this.door.position.set(-27.5, 18.025, 36.26);
-            
-            // Cek Scale: Jika pintu terlihat raksasa/kecil, ubah angka ini
-            // Biasanya 1.0 jika export dari map, atau 0.05 jika dari Blockbench
             this.door.scale.set(0.5, 0.5, 0.3); 
-
-            // Putar pintu agar pas dengan lubang tembok (sesuaikan jika perlu)
-            // Misalnya 0, 90, 180, atau 270 derajat
-            this.door.rotation.y = 90; 
-
-            // -- LOGIKA BUKA PINTU --
-            // Langsung kita buka 90 derajat agar sesuai script "Pintu Terbuka"
             this.door.rotation.y = THREE.MathUtils.degToRad(0);
-
             this.scene.add(this.door);
+
+            // [BARU] Pintu masuk collider
+            this.door.traverse((c) => { if(c.isMesh) this.colliders.push(c); });
         }
-          // 2. PINTU BARU (Wooden Door)
+
+        // PINTU 2
         this.door2 = this.assets.get('door2');
         if (this.door2) {
-            // Koordinat dari Anda: -26.96, 19.36, 35.46
             this.door2.position.set(-26.5, 18.025, 36.26);
-            
-            // Cek Scale: Jika pintu terlihat raksasa/kecil, ubah angka ini
-            // Biasanya 1.0 jika export dari map, atau 0.05 jika dari Blockbench
             this.door2.scale.set(0.5, 0.5, 0.3); 
-
-            // Putar pintu agar pas dengan lubang tembok (sesuaikan jika perlu)
-            // Misalnya 0, 90, 180, atau 270 derajat
-            this.door2.rotation.y = 90; 
-
-            // -- LOGIKA BUKA PINTU --
-            // Langsung kita buka 90 derajat agar sesuai script "Pintu Terbuka"
             this.door2.rotation.y = THREE.MathUtils.degToRad(180);
-
             this.scene.add(this.door2);
+
+            // [BARU] Pintu 2 masuk collider
+            this.door2.traverse((c) => { if(c.isMesh) this.colliders.push(c); });
         }
 
         // 3. STEVE
@@ -84,6 +79,9 @@ export class Scene1 {
             chest.scale.set(0.63, 0.63, 0.63);
             chest.rotation.y = THREE.MathUtils.degToRad(-90); 
             this.scene.add(chest);
+
+            // [BARU] Chest masuk collider
+            chest.traverse((c) => { if(c.isMesh) this.colliders.push(c); });
         }
 
         const torch = this.assets.get('torch');
@@ -101,5 +99,10 @@ export class Scene1 {
             pickaxe.rotation.x = THREE.MathUtils.degToRad(90.5);
             this.scene.add(pickaxe);
         }
+    }
+
+    // [BARU] Getter untuk diambil StoryManager
+    getColliders() {
+        return this.colliders;
     }
 }

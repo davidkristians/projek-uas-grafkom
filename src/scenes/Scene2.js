@@ -7,7 +7,7 @@ export class Scene2 {
         
         // Aktor
         this.steveWalk = null;
-        // this.steveStatic = null; // Tidak perlu variabel ini lagi
+        // this.steveStatic = null; 
         this.alex = null;
         this.villager = null;
         this.fox = null;
@@ -24,8 +24,8 @@ export class Scene2 {
             new THREE.Vector3(-26.48, 18.80, 41.67), // Titik 4 (Naik)
             new THREE.Vector3(-21.42, 18.80, 41.67), // Titik 5
             new THREE.Vector3(-21.42, 18.80, 33.16), // Titik 6
-            new THREE.Vector3(-21.43, 18.04, 32.17), // Titik 7
-            new THREE.Vector3(-21.63, 18.03, 26.99), // Titik 8
+            new THREE.Vector3(-21.43, 17.9, 32.17), // Titik 7
+            new THREE.Vector3(-21.63, 17.9, 26.99), // Titik 8
             new THREE.Vector3(-21.67, 18.8, 26.69), // Titik 9 (Naik)
             new THREE.Vector3(-21.57, 18.85, 25.66)  // Titik 10 (Final)
         ];
@@ -42,7 +42,6 @@ export class Scene2 {
         this.steveWalk = this.assets.get('steve_walk');
         if (this.steveWalk) {
             this.steveWalk.position.copy(this.pathPoints[0]);
-            // Skala disesuaikan dengan kode Anda sebelumnya
             this.steveWalk.scale.set(0.0013, 0.0013, 0.0013); 
             this.steveWalk.visible = false; 
             this.scene.add(this.steveWalk);
@@ -58,6 +57,9 @@ export class Scene2 {
             this.alex.position.set(-21.47, 17.67, 23.28); 
             this.alex.rotation.y = THREE.MathUtils.degToRad(0); 
             this.alex.scale.set(0.47, 0.47, 0.47);
+            
+            this.alex.visible = false; // [FIX] Sembunyi saat setup
+
             this.scene.add(this.alex);
 
             // Coba mainkan animasi Alex jika ada
@@ -74,6 +76,9 @@ export class Scene2 {
             this.villager.position.set(-14.85, 17.41, 28.81);
             this.villager.rotation.y = THREE.MathUtils.degToRad(-90);
             this.villager.scale.set(0.05, 0.05, 0.05);
+            
+            this.villager.visible = false; // [FIX] Sembunyi saat setup
+            
             this.scene.add(this.villager);
 
             const mixer = this.villager.userData.mixer;
@@ -87,6 +92,9 @@ export class Scene2 {
             this.fox.position.set(-25, 17.67, 28);
             this.fox.rotation.y = THREE.MathUtils.degToRad(0);
             this.fox.scale.set(0.5, 0.5, 0.5);
+            
+            this.fox.visible = false; // [FIX] Sembunyi saat setup
+            
             this.scene.add(this.fox);
         }
         
@@ -94,15 +102,21 @@ export class Scene2 {
         if(this.bee) {
             this.bee.position.set(-22, 22, 35);
             this.bee.scale.set(0.02, 0.02, 0.02);
+            
+            this.bee.visible = false; // [FIX] Sembunyi saat setup
+            
             this.scene.add(this.bee);
         }
-        
-        // HAPUS bagian setup "steveStatic" clone disini
-        // Kita akan panggil Steve asli nanti di finishWalk
     }
 
     startAnimation() {
+        // [FIX] Tampilkan aktor hanya saat Scene 2 dimulai
         if(this.steveWalk) this.steveWalk.visible = true;
+        if(this.alex) this.alex.visible = true;
+        if(this.villager) this.villager.visible = true;
+        if(this.fox) this.fox.visible = true;
+        if(this.bee) this.bee.visible = true;
+
         this.isWalking = true;
         this.currentPointIndex = 0;
     }
@@ -170,8 +184,7 @@ export class Scene2 {
             steveOriginal.position.copy(this.steveWalk.position);
             steveOriginal.rotation.copy(this.steveWalk.rotation);
             
-            // [PENTING] Samakan skalanya agar tidak jadi raksasa/hilang
-            // Menggunakan skala yang sama dengan steveWalk (0.0013)
+            // [FIX] Menyamakan skala dengan steveWalk (0.0013) agar tidak raksasa
             steveOriginal.scale.set(0.05, 0.05, 0.05); 
             
             // Munculkan

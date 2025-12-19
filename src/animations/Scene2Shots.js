@@ -2,60 +2,77 @@ import * as THREE from 'three';
 
 export class Scene2Shots {
     constructor() {
-        // Jalur Kamera Dynamic (Tracking -> Zoom In -> Zoom Out)
+        // Jalur Kamera Dynamic
         this.curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(-29.95, 21.38, 43.63), // 1. Start Dynamic (Jauh)
-            new THREE.Vector3(-17.24, 24.83, 47.08), // 2. Tracking (Mengikuti jalan)
-            
-            // --- POINT BARU UNTUK KETENTUAN NO. 1 ---
-            
-            // 3. ZOOM IN (Mendekat ke Alex & Steve)
-            // Posisi agak rendah dan dekat agar terlihat intim/meeting
-            new THREE.Vector3(-21.5, 20.5, 30.0),    
-
-            // 4. ZOOM OUT (Ending Scene / Bird Eye)
-            // Tarik kamera mundur ke atas untuk menutup scene
-            new THREE.Vector3(-25.29, 20.16, 26.18)     
+            new THREE.Vector3(-29.95, 21.38, 43.63), // 1. Start Dynamic
+            new THREE.Vector3(-17.24, 24.83, 47.08), // 2. Tracking
+            new THREE.Vector3(-21.5, 20.5, 30.0),    // 3. Zoom In
+            new THREE.Vector3(-28.0, 18.5, 25.0),    // Transition
+            new THREE.Vector3(-34.0, 25.0, 28.0),    // Transition
+            new THREE.Vector3(-46.38, 35.00, 32.62)  // 4. Zoom Out
         ]);
+        
+        // Simpan state agar transisi smooth
+        this.currentLookAt = new THREE.Vector3();
     }
 
     update(camera, timer, totalDuration, stevePos) {
-        // Durasi total scene = 10 detik
-        // 0s - 2s: Statis (Menunggu Steve keluar)
-        // 2s - 8s: Tracking (Mengikuti Steve jalan)
-        // 8s - 10s: Zoom In ke pertemuan & Zoom Out
+        const splitTime = 3.0; // Waktu pindah ke shot dynamic
 
-        const splitTime = 2.0; 
-
+        // ==========================================
+        // 🎥 SHOT 1: STATIS TAPI NOLEH (0s - 2s)
+        // ==========================================
         if (timer < splitTime) {
-            // --- SHOT 1: STATIS ---
-            // Posisi: -26.44, 19.55, 32.55
+            // 1. Posisi Kamera Tetap (Statis)
             camera.position.set(-26.44, 19.55, 32.55);
-            // Pandangan: Sesuai request Anda (Z = 41.00)
-            camera.lookAt(-26.72, 19.26, 41.00); 
-        } else {
-            // --- SHOT 2: DYNAMIC + ZOOM ---
+            
+            // 2. Tentukan Titik Awal & Titik Akhir Noleh
+            // Awal: Lihat Pintu (-26.72, 19.26, 41.00)
+            const lookStart = new THREE.Vector3(-26.72, 19.26, 41.00);
+            
+            // Akhir: Lihat ke Kiri (Kita geser X atau Z targetnya)
+            // Asumsi: Menggeser X ke positif/negatif akan membuat efek menoleh
+            const lookLeft = new THREE.Vector3(-20.0, 19.26, 41.00); // Geser X target
+
+            // 3. Hitung Progress (0% sampai 100% dalam 2 detik)
+            const panProgress = timer / splitTime; 
+
+            // 4. Gerakkan Target Pandangan (LerpVektor)
+            // Ini akan membuat efek "YAW" (Geleng) secara halus
+            this.currentLookAt.lerpVectors(lookStart, lookLeft, panProgress * 0.5); // *0.5 agar tidak terlalu cepat
+
+            camera.lookAt(this.currentLookAt);
+        } 
+        
+        // ==========================================
+        // 🎥 SHOT 2: DYNAMIC FOLLOW (2s - Selesai)
+        // ==========================================
+        else {
             const dynamicDuration = totalDuration - splitTime;
             const t = (timer - splitTime) / dynamicDuration;
-            const safeT = Math.min(Math.max(t, 0), 1); // Clamp 0-1
+            const safeT = Math.min(Math.max(t, 0), 1); 
 
-            // Ambil posisi di kurva baru
+            // 1. Update Posisi di Rel Kurva
             const camPos = this.curve.getPoint(safeT);
             camera.position.copy(camPos);
             
-            // --- LOGIKA FOKUS KAMERA (Rotate/Yaw/Pitch) ---
-            
-            // Jika sudah di fase akhir (Zoom Out/Ending), 
-            // kunci pandangan ke titik pertemuan (posisi Alex) agar kamera stabil
+            // 2. Tentukan Target Fokus
+            const targetPos = new THREE.Vector3();
+
+            // Ending: Kunci ke Alex
             if (safeT > 0.85) {
-                // LookAt titik tengah pertemuan (Alex -21.47, 17.67, 23.28)
-                camera.lookAt(-21.47, 18.5, 23.28); 
+                targetPos.set(-21.47, 18.5, 23.28); 
             } 
-            // Jika masih fase jalan, ikuti Steve
+            // Action: Ikuti Steve
             else if (stevePos) {
-                // Offset Y +1.5 agar melihat punggung/kepala, bukan kaki
-                camera.lookAt(stevePos.x, stevePos.y + 1.5, stevePos.z);
+                targetPos.set(stevePos.x, stevePos.y + 1.5, stevePos.z);
             }
+
+            // 3. Smooth Rotation (Lerp)
+            // Ini membuat kamera tidak patah leher saat target berubah
+            this.currentLookAt.lerp(targetPos, 0.1);
+            
+            camera.lookAt(this.currentLookAt);
         }
     }
 }

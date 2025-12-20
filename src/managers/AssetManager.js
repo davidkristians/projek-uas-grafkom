@@ -21,14 +21,23 @@ export class AssetManager {
 
             // --- SCENE 2 (BARU) ---
             { name: 'alex', url: '/resources/scene2/alex.glb' },
+
+            // --- SCENE 3 ---
+            { name: 'furnace', url: '/resources/scene3/furnace_on.glb' },
+            { name: 'furnace2', url: '/resources/scene3/furnace_on.glb' },
+            { name: 'crafting_table', url: '/resources/scene3/crafting_table.glb' },
+            { name: 'minecraft_chest', url: '/resources/scene3/minecraft_chest.glb' },
             { name: 'villager', url: '/resources/scene2/villager.glb' },
             { name: 'bee', url: '/resources/scene2/bee.glb' },
             { name: 'fox', url: '/resources/scene2/fox.glb' },
-            { name: 'steve_walk', url: '/resources/scene2/steve_walk.glb' }
+            { name: 'steve_walk', url: '/resources/scene2/steve_walk.glb' },
+
+            // --- SCENE 4 ---
+            { name: 'alex_walk', url: '/resources/scene3/minecraft_alex_character_animated (2).glb' }
         ];
 
         let loadedCount = 0;
-        const totalAssets = assetsToLoad.length; 
+        const totalAssets = assetsToLoad.length;
 
         const checkLoadStatus = () => {
             loadedCount++;
@@ -69,7 +78,7 @@ export class AssetManager {
 
                     this.assets[item.name] = model;
                     console.log(`✅ Loaded: ${item.name}`);
-                    checkLoadStatus(); 
+                    checkLoadStatus();
                 },
                 undefined,
                 (err) => {

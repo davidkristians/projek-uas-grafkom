@@ -19,7 +19,7 @@ export class AssetManager {
             { name: 'door', url: '/resources/scene1/wooden_door.glb' },
             { name: 'door2', url: '/resources/scene1/wooden_door.glb' },
 
-            // --- SCENE 2 (BARU) ---
+            // --- SCENE 2 ---
             { name: 'alex', url: '/resources/scene2/alex.glb' },
 
             // --- SCENE 3 ---
@@ -33,7 +33,14 @@ export class AssetManager {
             { name: 'steve_walk', url: '/resources/scene2/steve_walk.glb' },
 
             // --- SCENE 4 ---
-            { name: 'alex_walk', url: '/resources/scene3/minecraft_alex_character_animated (2).glb' }
+            { name: 'alex_walk', url: '/resources/scene3/minecraft_alex_character_animated (2).glb' },
+
+            // --- SCENE 5 (MOBS) ---
+            { name: 'zombie', url: '/resources/scene5/zombie.glb' },
+            { name: 'skeleton', url: '/resources/scene5/skeleton.glb' },
+            { name: 'spider', url: '/resources/scene5/spider.glb' },
+            { name: 'creeper', url: '/resources/scene5/creeper.glb' },
+            { name: 'enderman', url: '/resources/scene5/enderman.glb' }
         ];
 
         let loadedCount = 0;

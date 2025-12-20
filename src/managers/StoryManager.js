@@ -3,10 +3,13 @@ import { Scene1 } from '../scenes/scene1.js';
 import { Scene2 } from '../scenes/Scene2.js';
 import { Scene3 } from '../scenes/Scene3.js';
 import { Scene4 } from '../scenes/Scene4.js';
+import { Scene5 } from '../scenes/Scene5.js'; // Import Scene 5
+
 import { Scene1Shots } from '../animations/Scene1Shots.js';
 import { Scene2Shots } from '../animations/Scene2Shots.js';
 import { Scene3Shots } from '../animations/Scene3Shots.js';
 import { Scene4Shots } from '../animations/Scene4Shots.js';
+import { Scene5Shots } from '../animations/Scene5Shots.js'; // Import Shots 5
 
 export class StoryManager {
     constructor(scene, camera, assetManager, sunLight, controls) {
@@ -21,12 +24,14 @@ export class StoryManager {
         this.scene2Objects = new Scene2(scene, assetManager);
         this.scene3Objects = new Scene3(this.scene2Objects); // Logic Dialog
         this.scene4Objects = new Scene4(scene, assetManager, this.scene2Objects);
+        this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects); // Init Scene 5
 
         // Shots
         this.scene1Shots = new Scene1Shots();
         this.scene2Shots = new Scene2Shots();
         this.scene3Shots = new Scene3Shots(); // Camera Dialog
         this.scene4Shots = new Scene4Shots(); // Camera Follow
+        this.scene5Shots = new Scene5Shots(); // Init Shots 5
 
         this.isCinematic = true;
         this.sceneStep = 1;
@@ -53,6 +58,7 @@ export class StoryManager {
         this.scene2Objects.setup();
         this.scene3Objects.setup();
         this.scene4Objects.setup();
+        this.scene5Objects.setup(); // Setup Scene 5
 
         if (this.sunLight) {
             this.sunLight.intensity = 1.5;
@@ -156,7 +162,7 @@ export class StoryManager {
         // 🎬 SCENE 3 (First Person Dialog)
         // ===========================================
         else if (this.sceneStep === 3) {
-            this.scene2Objects.update(safeDelta); // Animasi background (lebah dll)
+            this.scene2Objects.update(safeDelta); // Animasi background
 
             const currentState = this.scene3Objects.state;
             const alexHead = this.scene2Objects.getAlexHeadPosition();
@@ -164,13 +170,12 @@ export class StoryManager {
             // Logic UI
             this.scene3Objects.update(safeDelta, this.timer, this.camera);
 
-            // Logic Kamera (Rotasi Kepala Steve)
+            // Logic Kamera
             this.scene3Shots.update(this.camera, this.timer, alexHead, currentState);
 
             // Transisi Pertanyaan
             if (this.timer > 7.0) {
                 if (currentState === 1) {
-                    // Lanjut Q2
                     this.scene3Objects.setQuestionData(2);
                     this.timer = 0;
                 } else if (currentState === 2) {
@@ -192,13 +197,58 @@ export class StoryManager {
         else if (this.sceneStep === 4) {
             this.scene4Objects.update(safeDelta);
 
-            // Update kamera ikuti karakter aktif (Steve atau Alex)
+            // Update kamera ikuti karakter
             const currentPos = this.scene4Objects.getCurrentPosition();
             this.scene4Shots.update(this.camera, currentPos, this.scene4Objects.currentPhase, this.scene4Objects.phaseTimer);
 
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {
-                console.log("🎬 Scene 4 selesai, masuk Free Roam");
+                console.log("🎬 Scene 4 selesai, Masuk Scene 5 (Invasion)");
+                
+                this.sceneStep = 5;
+                this.timer = 0;
+
+                // Matikan objek scene 4 agar tidak double
+                if(this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
+                if(this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
+
+                // Mulai Scene 5 & Pass SunLight untuk trigger Night Mode
+                this.scene5Objects.start(this.sunLight);
+
+                // Tampilkan judul baru
+                if (this.subtitle) {
+                    this.subtitle.innerText = "THE NIGHT INVASION";
+                    this.subtitle.style.opacity = '1';
+                    this.subtitle.style.color = 'red'; // Efek dramatis
+                    this.subtitle.style.textShadow = '3px 3px 6px #500';
+                    setTimeout(() => { 
+                        if (this.subtitle) {
+                            this.subtitle.style.opacity = '0';
+                            this.subtitle.style.color = 'white'; 
+                            this.subtitle.style.textShadow = '3px 3px 6px black';
+                        }
+                    }, 4000);
+                }
+            }
+        }
+        // ===========================================
+        // 🎬 SCENE 5 (Night Invasion) - 20 Detik
+        // ===========================================
+
+        else if (this.sceneStep === 5) {
+            // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
+            const durationS5 = 20.0; 
+            
+            this.scene5Objects.update(safeDelta);
+            this.scene5Shots.update(this.camera, this.timer);
+
+            if (this.timer >= durationS5) {
+                console.log("🎬 Cinematic Selesai, masuk Free Roam");
+                
+                // PENTING: Reset FOV kembali normal sebelum user main
+                this.camera.fov = 50;
+                this.camera.updateProjectionMatrix();
+                
                 this.switchMode('FREEROAM');
             }
         }
@@ -255,6 +305,25 @@ export class StoryManager {
             }
 
             console.log("🎮 Mode: Free Roam");
+            
+            // --- RESET LIGHTING KE SIANG (DAY MODE) ---
+            if (this.sunLight) {
+                this.sunLight.intensity = 1.5;
+                this.sunLight.color.setHex(0xffdf80); // Kembali ke kuning hangat
+            }
+            
+            // Reset Ambient Light ke normal
+            this.scene.traverse((child) => {
+                if (child.isAmbientLight) {
+                    child.intensity = 0.5; // Reset intensity
+                }
+            });
+
+            // Matikan Obor Scene 5
+            if (this.scene5Objects.torchLight) {
+                this.scene5Objects.torchLight.visible = false;
+            }
+
             if (this.controls) {
                 const walls = this.scene1Objects.getColliders();
                 this.controls.setColliders(walls);

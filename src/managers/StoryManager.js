@@ -194,7 +194,7 @@ export class StoryManager {
 
             // Update kamera ikuti karakter aktif (Steve atau Alex)
             const currentPos = this.scene4Objects.getCurrentPosition();
-            this.scene4Shots.update(this.camera, currentPos);
+            this.scene4Shots.update(this.camera, currentPos, this.scene4Objects.currentPhase, this.scene4Objects.phaseTimer);
 
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {

@@ -33,7 +33,7 @@ export class AssetManager {
             { name: 'steve_walk', url: '/resources/scene2/steve_walk.glb' },
 
             // --- SCENE 4 ---
-            { name: 'alex_walk', url: '/resources/scene3/minecraft_alex_character_animated.glb' }
+            { name: 'alex_walk', url: '/resources/scene3/minecraft_alex_character_animated (2).glb' }
         ];
 
         let loadedCount = 0;

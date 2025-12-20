@@ -58,9 +58,9 @@ export class Scene3 {
         this.ui.question.style.opacity = '0';
 
         if (qIndex === 1) {
-            this.qData = { q: "Hari ini sejuk yaa?", l: "Lumayan sih", r: "Biasa aja!" };
+            this.qData = { q: "Pagi! udah siap kerja?", l: "Malas", r: "Siap dong!" };
         } else {
-            this.qData = { q: "Kamu mau masak / potong kayu?", l: "Masak", r: "Potong Kayu" };
+            this.qData = { q: "Kamu mau masak atau crafting?", l: "Masak", r: "Crafting" };
         }
         this.ui.question.innerText = this.qData.q;
     }

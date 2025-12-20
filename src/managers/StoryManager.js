@@ -33,7 +33,7 @@ export class StoryManager {
         this.timer = 0;
 
         // UI
-        this.subtitle = this.createSubtitle("WELCOME TO STEVE'S HOUSE");
+        this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAH STEVE");
         this.fadeOverlay = this.createFadeOverlay();
         this.cinematicBars = this.createCinematicBars();
 
@@ -122,7 +122,7 @@ export class StoryManager {
                 this.timer = 0;
 
                 if (this.subtitle) {
-                    this.subtitle.innerText = "MEETING ALEX";
+                    this.subtitle.innerText = "BERTEMU ALEX";
                     this.subtitle.style.opacity = '1';
                     setTimeout(() => { if (this.subtitle) this.subtitle.style.opacity = '0'; }, 4000);
                 }
@@ -198,8 +198,107 @@ export class StoryManager {
 
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {
-                console.log("🎬 Scene 4 selesai, masuk Free Roam");
+                console.log("🎬 Scene 4 selesai, masuk Scene 5 (Day-Night)");
+                this.sceneStep = 5;
+                this.timer = 0;
+
+                // Setup Scene 5 Camera
+                // "Buatkan kamera -24.35, 21.43, 21.86"
+                this.camera.position.set(-24.35, 21.43, 21.86);
+                this.camera.lookAt(0, 15, 45); // Asumsi lihat ke tengah world/rumah
+
+                // Setup Sun Animation Variables
+                this.sunElevation = 20; // Start dari agak sore (20 derajat)
+                this.sunAzimuth = 180;  // Posisi Matahari (Selatan/Barat)
+
+                // Aktifkan Procedural Sky (Sembunyikan HDR statis)
+                if (this.scene.background && this.scene.background.isTexture) {
+                    this.oldBackground = this.scene.background;
+                    this.scene.background = null; // Hapus HDR
+                }
+
+                // Ambil referensi sky & sun dari lighting setup 
+                // (Note: StoryManager perlu akses ke objek sky/sunLight yang dibuat di lighting.js
+                // Tapi lighting.js setup dipanggil di main.js. 
+                // Kita perlu pass 'sky' object ke StoryManager atau akses global.
+                // SOLUSI: Kita asumsikan 'sky' ada di scene.children atau di-pass via constructor.
+                // Untuk cepatnya, cari di scene children.)
+
+                this.skyMesh = this.scene.children.find(c => c.isMesh && c.material && c.material.uniforms && c.material.uniforms.sunPosition);
+                if (this.skyMesh) {
+                    this.skyMesh.visible = true;
+                    console.log("☀ Sky Mesh Activated");
+                }
+            }
+        }
+        // ===========================================
+        // 🎬 SCENE 5 (Day to Night Transition) - 10 Detik
+        // ===========================================
+        else if (this.sceneStep === 5) {
+            const durationS5 = 10.0;
+            const progress = Math.min(this.timer / durationS5, 1.0);
+
+            // Animate Sun Elevation (20 deg -> -5 deg / Night)
+            // 0 deg = Horizon (Sunset)
+            const currentElevation = THREE.MathUtils.lerp(20, -5, progress);
+
+            // Perlu import updateSunPosition? Atau copy logikanya.
+            // Biar gampang, kita implementasi logika update sun di sini atau import.
+            // Karena ini module, kita butuh import di atas file. 
+            // TAPI, kita tidak bisa tambah import dynamic di sini tanpa edit atas file.
+            // Kita hitung manual saja spherical coordsnya di sini.
+
+            const phi = THREE.MathUtils.degToRad(90 - currentElevation);
+            const theta = THREE.MathUtils.degToRad(180); // Tetap di satu azimuth
+            const sunVec = new THREE.Vector3();
+            sunVec.setFromSphericalCoords(1, phi, theta);
+
+            // Update Sky Shader
+            if (this.skyMesh) {
+                this.skyMesh.material.uniforms['sunPosition'].value.copy(sunVec);
+            }
+
+            // Update Directional Light
+            // Cari directional light di scene
+            if (!this.directionalLight) {
+                this.directionalLight = this.scene.children.find(c => c.isDirectionalLight);
+            }
+            if (this.directionalLight) {
+                this.directionalLight.position.copy(sunVec).multiplyScalar(100);
+
+                // Redupkan cahaya saat matahari turun
+                // Elevasi 10 -> 1.0 intensity
+                // Elevasi -5 -> 0.0 intensity
+                let intensity = (currentElevation + 5) / 25.0; // Norm: 0 to 1 range approx
+                intensity = THREE.MathUtils.clamp(intensity, 0, 1.5);
+                this.directionalLight.intensity = intensity;
+
+                // Ubah warna cahaya (Putih -> Orange -> Biru Gelap)
+                if (currentElevation < 10 && currentElevation > 0) {
+                    this.directionalLight.color.setHex(0xffaa00); // Orange Sunset
+                } else if (currentElevation <= 0) {
+                    this.directionalLight.color.setHex(0x000040); // Blue Night
+                } else {
+                    this.directionalLight.color.setHex(0xffffff);
+                }
+            }
+
+            // Gelapkan Environment (Ambient)
+            // Scene environment intensity
+            if (this.scene.backgroundIntensity !== undefined) {
+                this.scene.backgroundIntensity = THREE.MathUtils.lerp(0.5, 0.1, progress); // Gelap total
+                this.scene.environmentIntensity = THREE.MathUtils.lerp(0.5, 0.1, progress);
+            }
+
+            // Transisi ke Free Roam setelah kelar
+            if (this.timer >= durationS5) {
+                console.log("🎬 Scene 5 Done (Night). Welcome to Night Free Roam.");
                 this.switchMode('FREEROAM');
+
+                // Kembalikan HDR? Atau biarkan malam?
+                // "Showcase background changing" -> mungkin biarkan malam.
+                // Tapi kalau user mau main, mungkin balikin ke kondisi playable (atau stay night).
+                // User request "showcase", kita biarkan di state terakhir (Malam).
             }
         }
     }

@@ -38,7 +38,7 @@ export class StoryManager {
         this.timer = 0;
 
         // UI
-        this.subtitle = this.createSubtitle("WELCOME TO STEVE'S HOUSE");
+        this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAHNYA STEVE");
         this.fadeOverlay = this.createFadeOverlay();
         this.cinematicBars = this.createCinematicBars();
 
@@ -128,7 +128,7 @@ export class StoryManager {
                 this.timer = 0;
 
                 if (this.subtitle) {
-                    this.subtitle.innerText = "MEETING ALEX";
+                    this.subtitle.innerText = "KETEMU AYANK";
                     this.subtitle.style.opacity = '1';
                     setTimeout(() => { if (this.subtitle) this.subtitle.style.opacity = '0'; }, 4000);
                 }
@@ -204,27 +204,27 @@ export class StoryManager {
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {
                 console.log("🎬 Scene 4 selesai, Masuk Scene 5 (Invasion)");
-                
+
                 this.sceneStep = 5;
                 this.timer = 0;
 
                 // Matikan objek scene 4 agar tidak double
-                if(this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
-                if(this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
+                if (this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
+                if (this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
 
                 // Mulai Scene 5 & Pass SunLight untuk trigger Night Mode
                 this.scene5Objects.start(this.sunLight);
 
                 // Tampilkan judul baru
                 if (this.subtitle) {
-                    this.subtitle.innerText = "THE NIGHT INVASION";
+                    this.subtitle.innerText = "MALAM TELAH TIBA";
                     this.subtitle.style.opacity = '1';
                     this.subtitle.style.color = 'red'; // Efek dramatis
                     this.subtitle.style.textShadow = '3px 3px 6px #500';
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         if (this.subtitle) {
                             this.subtitle.style.opacity = '0';
-                            this.subtitle.style.color = 'white'; 
+                            this.subtitle.style.color = 'white';
                             this.subtitle.style.textShadow = '3px 3px 6px black';
                         }
                     }, 4000);
@@ -237,18 +237,35 @@ export class StoryManager {
 
         else if (this.sceneStep === 5) {
             // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
-            const durationS5 = 20.0; 
-            
+            const durationS5 = 20.0;
+
             this.scene5Objects.update(safeDelta);
             this.scene5Shots.update(this.camera, this.timer);
 
+            // Close Doors Animation (18s - 20s)
+            if (this.timer >= 18.0) {
+                const door = this.scene1Objects.door;
+                const door2 = this.scene1Objects.door2;
+                if (door && door2) {
+                    const t = Math.min((this.timer - 18.0) / 0.5, 1.0); // Cepat menutup (0.5s)
+
+                    // Door 1: Rot (-90 -> 0), PosX (-28.25 -> -27.5)
+                    door.rotation.y = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(-90), THREE.MathUtils.degToRad(0), t);
+                    door.position.x = THREE.MathUtils.lerp(-28.25, -27.5, t);
+
+                    // Door 2: Rot (270 -> 180), PosX (-25.75 -> -26.5)
+                    door2.rotation.y = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(270), THREE.MathUtils.degToRad(180), t);
+                    door2.position.x = THREE.MathUtils.lerp(-25.75, -26.5, t);
+                }
+            }
+
             if (this.timer >= durationS5) {
                 console.log("🎬 Cinematic Selesai, masuk Free Roam");
-                
+
                 // PENTING: Reset FOV kembali normal sebelum user main
                 this.camera.fov = 50;
                 this.camera.updateProjectionMatrix();
-                
+
                 this.switchMode('FREEROAM');
             }
         }
@@ -305,13 +322,13 @@ export class StoryManager {
             }
 
             console.log("🎮 Mode: Free Roam");
-            
+
             // --- RESET LIGHTING KE SIANG (DAY MODE) ---
             if (this.sunLight) {
                 this.sunLight.intensity = 1.5;
                 this.sunLight.color.setHex(0xffdf80); // Kembali ke kuning hangat
             }
-            
+
             // Reset Ambient Light ke normal
             this.scene.traverse((child) => {
                 if (child.isAmbientLight) {
@@ -330,7 +347,17 @@ export class StoryManager {
                 this.controls.enabled = true;
 
                 const door = this.scene1Objects.door;
-                if (door) door.rotation.y = THREE.MathUtils.degToRad(-90);
+                const door2 = this.scene1Objects.door2; // Add door2 reference
+
+                // Ensure doors are CLOSED in Free Roam
+                if (door) {
+                    door.rotation.y = THREE.MathUtils.degToRad(0);
+                    door.position.x = -27.5;
+                }
+                if (door2) {
+                    door2.rotation.y = THREE.MathUtils.degToRad(180);
+                    door2.position.x = -26.5;
+                }
 
                 const blocker = document.getElementById('blocker');
                 if (blocker) blocker.style.display = 'block';

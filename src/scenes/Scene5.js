@@ -18,17 +18,24 @@ export class Scene5 {
 
         this.fireLights = [];
         this.timer = 0;
-        
+
         // Penyimpanan Texture Malam (Pre-loaded)
-        this.nightTexture = null; 
-        
+        this.nightTexture = null;
+
         // Simpan referensi lampu pilar
-        this.pillarLightObj = null; 
+        this.pillarLightObj = null;
+
+        // [BARU] Simpan collider
+        this.colliders = [];
+    }
+
+    getColliders() {
+        return this.colliders;
     }
 
     setup() {
         console.log("🛠️ Setup: Scene 5 (Pre-loading Assets)");
-        
+
         // 1. PRE-LOAD MOBS
         this.setupMobs();
 
@@ -61,7 +68,7 @@ export class Scene5 {
             texture.minFilter = THREE.LinearFilter;
             texture.magFilter = THREE.LinearFilter;
             texture.generateMipmaps = false;
-            
+
             this.nightTexture = texture; // Simpan di variabel, jangan dipakai dulu
             console.log("🌌 Night Sky Loaded!");
         });
@@ -74,7 +81,7 @@ export class Scene5 {
         pillarLight.position.set(0, 2.0, 5.0);
         pillarLight.castShadow = true;
         pillarLight.shadow.bias = -0.0001;
-        pillarLight.shadow.mapSize.width = 2048; 
+        pillarLight.shadow.mapSize.width = 2048;
         pillarLight.shadow.mapSize.height = 2048;
 
         pillarLight.visible = false; // Hidden di awal
@@ -102,7 +109,7 @@ export class Scene5 {
                     child.material = child.material.clone();
                     child.userData.isClonedForNight = true;
                 }
-                
+
                 child.material.roughness = 0.2;
                 child.material.metalness = 0.1;
                 child.castShadow = true;
@@ -154,6 +161,9 @@ export class Scene5 {
                 }
                 this.scene.add(mob);
                 this.mobs.push(mob);
+
+                // [BARU] Masukkan ke collider (Mob)
+                mob.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
             }
         });
     }
@@ -167,7 +177,7 @@ export class Scene5 {
         if (this.nightTexture) {
             this.scene.background = this.nightTexture;
             this.scene.environment = this.nightTexture;
-            this.scene.backgroundIntensity = 1.0; 
+            this.scene.backgroundIntensity = 1.0;
             this.scene.environmentIntensity = 0.5;
         } else {
             // Fallback jika EXR belum selesai load (jarang terjadi jika setup dipanggil di awal)
@@ -253,7 +263,7 @@ export class Scene5 {
 
             if (door && door2) {
                 const t = Math.min(Math.max((this.timer - 19.6) / 0.2, 0), 1);
-                
+
                 const rStart1 = THREE.MathUtils.degToRad(-90);
                 const rEnd1 = 0;
                 door.rotation.y = THREE.MathUtils.lerp(rStart1, rEnd1, t);

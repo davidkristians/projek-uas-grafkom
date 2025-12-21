@@ -33,6 +33,13 @@ export class Scene2 {
         this.currentPointIndex = 0;
         this.moveSpeed = 3.5;
         this.isWalking = false;
+
+        // [BARU] Simpan collider
+        this.colliders = [];
+    }
+
+    getColliders() {
+        return this.colliders;
     }
 
     setup() {
@@ -49,6 +56,9 @@ export class Scene2 {
             const mixer = this.steveWalk.userData.mixer;
             const anims = this.steveWalk.userData.animations;
             if (mixer && anims.length > 0) mixer.clipAction(anims[0]).play();
+
+            // [BARU] Masukkan ke collider (Steve Walk)
+            this.steveWalk.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
 
         // 2. ALEX
@@ -65,6 +75,9 @@ export class Scene2 {
             if (mixer && anims && anims.length > 0) {
                 mixer.clipAction(anims[0]).play();
             }
+
+            // [BARU] Masukkan ke collider (Alex)
+            this.alex.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
 
         // 3. VILLAGER
@@ -79,6 +92,9 @@ export class Scene2 {
             const mixer = this.villager.userData.mixer;
             const anims = this.villager.userData.animations;
             if (mixer && anims.length > 0) mixer.clipAction(anims[0]).play();
+
+            // [BARU] Masukkan ke collider (Villager)
+            this.villager.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
 
         // 4. ANIMALS
@@ -89,6 +105,9 @@ export class Scene2 {
             this.fox.scale.set(0.5, 0.5, 0.5);
             this.fox.visible = false;
             this.scene.add(this.fox);
+
+            // [BARU] Fox Collider
+            this.fox.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
 
         this.bee = this.assets.get('bee');
@@ -107,10 +126,11 @@ export class Scene2 {
             this.steveStatic.visible = false;
             this.scene.add(this.steveStatic);
 
-            if (originalSteve.userData.animations) {
-                this.steveStatic.userData.mixer = new THREE.AnimationMixer(this.steveStatic);
-                this.steveStatic.userData.animations = originalSteve.userData.animations;
-            }
+            this.steveStatic.userData.mixer = new THREE.AnimationMixer(this.steveStatic);
+            this.steveStatic.userData.animations = originalSteve.userData.animations;
+
+            // [BARU] Steve Static Collider
+            this.steveStatic.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
     }
 

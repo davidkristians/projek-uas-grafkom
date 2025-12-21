@@ -35,6 +35,13 @@ export class Scene4 {
 
         this.currentPointIndex = 0;
         this.isActive = false;
+
+        // [BARU] Simpan collider
+        this.colliders = [];
+    }
+
+    getColliders() {
+        return this.colliders;
     }
 
     setup() {
@@ -52,6 +59,9 @@ export class Scene4 {
             this.alexWalk.scale.set(0.5, 0.5, 0.5);
             this.alexWalk.visible = false;
             this.scene.add(this.alexWalk);
+
+            // [BARU] Masukkan ke collider (Alex Walk)
+            this.alexWalk.traverse((c) => { if (c.isMesh) this.colliders.push(c); });
         }
 
         // Alex Static - reuse dari Scene2 (model diam)

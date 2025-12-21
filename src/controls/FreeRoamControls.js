@@ -6,7 +6,7 @@ export class FreeRoamControls {
         this.controls = new PointerLockControls(camera, domElement);
         this.velocity = new THREE.Vector3();
         this.direction = new THREE.Vector3();
-        
+
         // Status Tombol
         this.moveForward = false;
         this.moveBackward = false;
@@ -16,10 +16,10 @@ export class FreeRoamControls {
         this.moveDown = false;
 
         // CONFIG: Default mati (tunggu cinematic selesai)
-        this.enabled = false; 
+        this.enabled = false;
 
         // Collision Setup
-        this.colliders = []; 
+        this.colliders = [];
         this.raycaster = new THREE.Raycaster();
         this.raycaster.far = 1.5; // Jarak deteksi tembok (1.5 meter)
 
@@ -46,7 +46,7 @@ export class FreeRoamControls {
         blocker.style.backgroundColor = 'rgba(0,0,0,0.5)';
         blocker.style.padding = '20px';
         blocker.style.pointerEvents = 'none';
-        blocker.style.display = 'none'; 
+        blocker.style.display = 'none';
         blocker.innerHTML = 'KLIK UNTUK MULAI<br><span style="font-size:14px">WASD = Gerak, Space/Shift = Naik/Turun</span>';
         document.body.appendChild(blocker);
 
@@ -99,7 +99,7 @@ export class FreeRoamControls {
 
         this.raycaster.set(position, directionVector);
         const intersects = this.raycaster.intersectObjects(this.colliders);
-        
+
         // Jika ada tembok dalam jarak < 1.5 unit, return true (Tabrakan!)
         if (intersects.length > 0 && intersects[0].distance < 1.5) {
             return true;
@@ -120,19 +120,19 @@ export class FreeRoamControls {
         this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
         this.direction.normalize();
 
-        const speed = 100.0; 
+        const speed = 100.0;
 
         // 3. Collision Logic
         // Menggunakan posisi kamera saat ini
         const currentPos = camera.position;
-        
+
         // Vector bantuan untuk arah
         const forward = new THREE.Vector3();
         const side = new THREE.Vector3();
-        
+
         // Ambil arah hadap kamera dari controls
         this.controls.getDirection(forward);
-        
+
         // PENTING: Ratakan arah pandang ke sumbu Y=0 (Horizontal)
         // Agar saat melihat ke bawah, kita tidak "menabrak lantai" dan macet.
         forward.y = 0;
@@ -145,7 +145,7 @@ export class FreeRoamControls {
         if (this.moveForward || this.moveBackward) {
             // Arah gerak (+ maju, - mundur)
             const moveDir = forward.clone().multiplyScalar(this.direction.z);
-            
+
             // Cek apakah ada tembok di depan?
             if (!this.checkCollision(currentPos, moveDir)) {
                 this.velocity.z -= this.direction.z * speed * delta;
@@ -158,23 +158,36 @@ export class FreeRoamControls {
         if (this.moveLeft || this.moveRight) {
             // Arah gerak (+ kanan, - kiri)
             const moveDir = side.clone().multiplyScalar(this.direction.x);
-            
+
             if (!this.checkCollision(currentPos, moveDir)) {
                 this.velocity.x -= this.direction.x * speed * delta;
             } else {
                 this.velocity.x = 0; // Berhenti jika nabrak
             }
         }
-        
-        // --- Gerak Vertikal (Terbang) ---
-        // Tidak dikasih collision agar tetap bisa terbang bebas
-        if (this.moveUp) this.velocity.y += speed * delta;
-        if (this.moveDown) this.velocity.y -= speed * delta;
+
+        // --- Gerak Vertikal (Terbang) dengan Collision ---
+        if (this.moveUp) {
+            const moveDir = new THREE.Vector3(0, 1, 0);
+            if (!this.checkCollision(currentPos, moveDir)) {
+                this.velocity.y += speed * delta;
+            } else {
+                this.velocity.y = 0;
+            }
+        }
+        if (this.moveDown) {
+            const moveDir = new THREE.Vector3(0, -1, 0);
+            if (!this.checkCollision(currentPos, moveDir)) {
+                this.velocity.y -= speed * delta;
+            } else {
+                this.velocity.y = 0;
+            }
+        }
 
         // Terapkan pergerakan ke controls
         this.controls.moveRight(-this.velocity.x * delta);
         this.controls.moveForward(-this.velocity.z * delta);
-        
+
         // Update ketinggian kamera manual (karena moveForward/Right cuma horizontal)
         camera.position.y += this.velocity.y * delta;
 

@@ -3,13 +3,13 @@ import { Scene1 } from '../scenes/scene1.js';
 import { Scene2 } from '../scenes/Scene2.js';
 import { Scene3 } from '../scenes/Scene3.js';
 import { Scene4 } from '../scenes/Scene4.js';
-import { Scene5 } from '../scenes/Scene5.js'; 
+import { Scene5 } from '../scenes/Scene5.js';
 
 import { Scene1Shots } from '../animations/Scene1Shots.js';
 import { Scene2Shots } from '../animations/Scene2Shots.js';
 import { Scene3Shots } from '../animations/Scene3Shots.js';
 import { Scene4Shots } from '../animations/Scene4Shots.js';
-import { Scene5Shots } from '../animations/Scene5Shots.js'; 
+import { Scene5Shots } from '../animations/Scene5Shots.js';
 
 export class StoryManager {
     constructor(scene, camera, assetManager, sunLight, controls) {
@@ -22,16 +22,16 @@ export class StoryManager {
         // Scenes
         this.scene1Objects = new Scene1(scene, assetManager);
         this.scene2Objects = new Scene2(scene, assetManager);
-        this.scene3Objects = new Scene3(this.scene2Objects); 
+        this.scene3Objects = new Scene3(this.scene2Objects);
         this.scene4Objects = new Scene4(scene, assetManager, this.scene2Objects);
         this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects, this.scene1Objects);
 
         // Shots
         this.scene1Shots = new Scene1Shots();
         this.scene2Shots = new Scene2Shots();
-        this.scene3Shots = new Scene3Shots(); 
-        this.scene4Shots = new Scene4Shots(); 
-        this.scene5Shots = new Scene5Shots(); 
+        this.scene3Shots = new Scene3Shots();
+        this.scene4Shots = new Scene4Shots();
+        this.scene5Shots = new Scene5Shots();
 
         this.isCinematic = true;
         this.sceneStep = 1;
@@ -42,7 +42,7 @@ export class StoryManager {
         this.fadeOverlay = this.createFadeOverlay();
 
         this.cinematicBars = this.createCinematicBars();
-        this.endingOverlay = this.createEndingOverlay(); 
+        this.endingOverlay = this.createEndingOverlay();
 
         window.addEventListener('keydown', (event) => {
             if (event.code === 'KeyR' && this.isCinematic) {
@@ -75,7 +75,7 @@ export class StoryManager {
         this.scene1Objects.setup();
         this.scene1Shots.reset(this.camera);
 
-        this.setupAudio(); 
+        this.setupAudio();
         // Play Main BGM (Minecraft.mp3) start from 1:03
         if (this.sounds['bgm_minecraft']) {
             const bgm = this.sounds['bgm_minecraft'];
@@ -195,7 +195,7 @@ export class StoryManager {
         // 🎬 SCENE 3 (First Person Dialog)
         // ===========================================
         else if (this.sceneStep === 3) {
-            this.scene2Objects.update(safeDelta); 
+            this.scene2Objects.update(safeDelta);
 
             const currentState = this.scene3Objects.state;
             const alexHead = this.scene2Objects.getAlexHeadPosition();
@@ -212,7 +212,7 @@ export class StoryManager {
                     }
                     this.timer = 0;
                 } else if (currentState === 2) {
-                    this.scene3Objects.state = 3; 
+                    this.scene3Objects.state = 3;
                     this.scene3Objects.showResponse("Oke, semangat!");
                     if (this.sounds['click']) {
                         if (this.sounds['click'].isPlaying) this.sounds['click'].stop();
@@ -268,9 +268,9 @@ export class StoryManager {
                 const chestTimer = this.scene4Objects.phaseTimer;
                 if (chestTimer > 4.0) {
                     if (this.fadeOverlay) {
-                        const fadeVal = (chestTimer - 4.0) / 2.0; 
+                        const fadeVal = (chestTimer - 4.0) / 2.0;
                         this.fadeOverlay.style.opacity = Math.min(fadeVal, 1.0);
-                        this.fadeOverlay.style.background = 'black'; 
+                        this.fadeOverlay.style.background = 'black';
                     }
                 }
             }
@@ -280,7 +280,7 @@ export class StoryManager {
                 console.log("🎬 Scene 4 selesai, Masuk Scene 5 (Invasion)");
 
                 // [FIX STUCK/LAG] Bersihkan semua timeout yang mungkin tersisa
-                let id = window.setTimeout(function() {}, 0);
+                let id = window.setTimeout(function () { }, 0);
                 while (id--) {
                     window.clearTimeout(id);
                 }
@@ -301,7 +301,7 @@ export class StoryManager {
                 if (this.subtitle) {
                     this.subtitle.innerText = "MALAM TELAH TIBA";
                     this.subtitle.style.opacity = '1';
-                    this.subtitle.style.color = 'red'; 
+                    this.subtitle.style.color = 'red';
                     this.subtitle.style.textShadow = '3px 3px 6px #500';
                     setTimeout(() => {
                         if (this.subtitle) {
@@ -348,7 +348,7 @@ export class StoryManager {
                 }
                 if (this.sounds['bgm_minecraft']) {
                     const bgm = this.sounds['bgm_minecraft'];
-                    bgm.setVolume(0.5); 
+                    bgm.setVolume(0.5);
                     bgm.play();
                 }
             }
@@ -364,7 +364,7 @@ export class StoryManager {
 
                 const logoProg = Math.min(Math.max((this.timer - 21.0) / 2.0, 0), 1.0);
                 this.endingOverlay.logo.style.opacity = logoProg;
-                this.endingOverlay.logo.style.transform = `scale(${1.0 + (0.1 * (1 - logoProg))})`; 
+                this.endingOverlay.logo.style.transform = `scale(${1.0 + (0.1 * (1 - logoProg))})`;
             }
 
             if (this.timer >= durationS5) {
@@ -417,15 +417,15 @@ export class StoryManager {
         container.style.display = 'flex';
         container.style.justifyContent = 'center';
         container.style.alignItems = 'center';
-        container.style.zIndex = '1001'; 
-        container.style.pointerEvents = 'none'; 
+        container.style.zIndex = '1001';
+        container.style.pointerEvents = 'none';
         container.style.transition = 'backdrop-filter 0.5s';
 
         const logo = document.createElement('img');
         logo.src = 'resources/scene5/Minecraft-Logo-2011-2015.png';
         logo.style.width = '40%';
         logo.style.maxWidth = '600px';
-        logo.style.opacity = '0'; 
+        logo.style.opacity = '0';
         logo.style.transition = 'opacity 1s, transform 3s';
 
         container.appendChild(logo);
@@ -446,7 +446,7 @@ export class StoryManager {
             if (this.subtitle) this.subtitle.style.opacity = '0';
             if (this.fadeOverlay) this.fadeOverlay.style.display = 'none';
             if (this.endingOverlay) {
-                this.endingOverlay.container.style.display = 'none'; 
+                this.endingOverlay.container.style.display = 'none';
                 this.endingOverlay.logo.style.opacity = '0';
                 this.endingOverlay.container.style.backdropFilter = 'blur(0px)';
             }
@@ -459,12 +459,12 @@ export class StoryManager {
 
             if (this.sunLight) {
                 this.sunLight.intensity = 1.5;
-                this.sunLight.color.setHex(0xffdf80); 
+                this.sunLight.color.setHex(0xffdf80);
             }
 
             this.scene.traverse((child) => {
                 if (child.isAmbientLight) {
-                    child.intensity = 0.5; 
+                    child.intensity = 0.5;
                 }
             });
 
@@ -474,7 +474,13 @@ export class StoryManager {
 
             if (this.controls) {
                 const walls = this.scene1Objects.getColliders();
-                this.controls.setColliders(walls);
+                const scene2Cols = this.scene2Objects.getColliders();
+                const scene4Cols = this.scene4Objects.getColliders();
+                const scene5Cols = this.scene5Objects.getColliders();
+
+                const allColliders = [...walls, ...scene2Cols, ...scene4Cols, ...scene5Cols];
+
+                this.controls.setColliders(allColliders);
                 this.controls.enabled = true;
 
                 const door = this.scene1Objects.door;
@@ -537,7 +543,7 @@ export class StoryManager {
         if (isWalking) {
             if (!walkSound.isPlaying) walkSound.play();
         } else {
-            if (walkSound.isPlaying) walkSound.pause(); 
+            if (walkSound.isPlaying) walkSound.pause();
         }
     }
 
@@ -552,7 +558,7 @@ export class StoryManager {
             if (t >= 1) {
                 sound.setVolume(0);
                 sound.stop();
-                sound.setVolume(startVolume); 
+                sound.setVolume(startVolume);
                 clearInterval(fadeInterval);
             } else {
                 sound.setVolume(startVolume * (1 - t));
@@ -566,7 +572,7 @@ export class StoryManager {
         }
 
         const mobs = ['mob_skeleton', 'mob_zombie', 'mob_enderman'];
-        const sequence = [...mobs, ...mobs, ...mobs]; 
+        const sequence = [...mobs, ...mobs, ...mobs];
         sequence.forEach((name, index) => {
             setTimeout(() => {
                 if (this.sounds[name]) {

@@ -33,13 +33,8 @@ export class Scene5Shots {
         // --- FASE 1: ORBIT (0s - 12s) ---
         if (timer <= 12.0) {
             // Hitung progress 0.0 sampai 1.0
-<<<<<<< HEAD
             const t = Math.min(timer / 12.0, 1.5);
             
-=======
-            const t = Math.min(timer / 12.0, 1.0);
-
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
             // Ambil posisi di kurva berdasarkan t
             const pos = this.orbitCurve.getPointAt(t); // getPointAt membuat gerakan kecepatan konstan
 

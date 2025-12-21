@@ -40,7 +40,9 @@ export class StoryManager {
         // UI
         this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAH STEVE");
         this.fadeOverlay = this.createFadeOverlay();
+
         this.cinematicBars = this.createCinematicBars();
+        this.endingOverlay = this.createEndingOverlay(); // [NEW] Logo & Blur Overlay
 
         window.addEventListener('keydown', (event) => {
             if (event.code === 'KeyR' && this.isCinematic) {
@@ -256,8 +258,8 @@ export class StoryManager {
         // ===========================================
 
         else if (this.sceneStep === 5) {
-            // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
-            const durationS5 = 20.0;
+            // UBAH DURASI JADI 25.0 (Extra 5s untuk Logo)
+            const durationS5 = 25.0;
 
             // FADE IN SCENE 5
             if (this.timer < 2.0) {
@@ -269,6 +271,18 @@ export class StoryManager {
 
             this.scene5Objects.update(safeDelta);
             this.scene5Shots.update(this.camera, this.timer);
+
+            // --- ENDING SEQUENCE (Blur + Logo) ---
+            if (this.timer > 20.0) {
+                // Blur Effect (0px -> 10px)
+                const blurProg = Math.min((this.timer - 20.0) / 2.0, 1.0);
+                this.endingOverlay.container.style.backdropFilter = `blur(${blurProg * 8}px) brightness(${1.0 - (blurProg * 0.3)})`;
+
+                // Logo Fade In (Started slightly after blur)
+                const logoProg = Math.min(Math.max((this.timer - 21.0) / 2.0, 0), 1.0);
+                this.endingOverlay.logo.style.opacity = logoProg;
+                this.endingOverlay.logo.style.transform = `scale(${1.0 + (0.1 * (1 - logoProg))})`; // Subtle zoom out
+            }
 
             if (this.timer >= durationS5) {
                 console.log("🎬 Cinematic Selesai, masuk Free Roam");
@@ -313,6 +327,34 @@ export class StoryManager {
         bottomBar.style.transition = 'bottom 1s ease-in-out';
         document.body.appendChild(topBar); document.body.appendChild(bottomBar);
         return { top: topBar, bottom: bottomBar };
+        return { top: topBar, bottom: bottomBar };
+    }
+
+    createEndingOverlay() {
+        // Container Full Screen
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0'; container.style.left = '0';
+        container.style.width = '100vw'; container.style.height = '100vh';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        container.style.zIndex = '1001'; // Di atas title/bar
+        container.style.pointerEvents = 'none'; // Biar click tembus
+        container.style.transition = 'backdrop-filter 0.5s';
+
+        // Logo Image
+        const logo = document.createElement('img');
+        logo.src = 'resources/scene5/Minecraft-Logo-2011-2015.png';
+        logo.style.width = '40%';
+        logo.style.maxWidth = '600px';
+        logo.style.opacity = '0'; // Awal hidden
+        logo.style.transition = 'opacity 1s, transform 3s';
+
+        container.appendChild(logo);
+        document.body.appendChild(container);
+
+        return { container, logo };
     }
 
     forceFreeRoam() {
@@ -326,7 +368,13 @@ export class StoryManager {
             this.isCinematic = false;
             this.sceneStep = 0;
             if (this.subtitle) this.subtitle.style.opacity = '0';
+            if (this.subtitle) this.subtitle.style.opacity = '0';
             if (this.fadeOverlay) this.fadeOverlay.style.display = 'none';
+            if (this.endingOverlay) {
+                this.endingOverlay.container.style.display = 'none'; // Hide Logo
+                this.endingOverlay.logo.style.opacity = '0';
+                this.endingOverlay.container.style.backdropFilter = 'blur(0px)';
+            }
             if (this.cinematicBars) {
                 this.cinematicBars.top.style.top = '-15%';
                 this.cinematicBars.bottom.style.bottom = '-15%';
@@ -358,7 +406,17 @@ export class StoryManager {
                 this.controls.enabled = true;
 
                 const door = this.scene1Objects.door;
-                if (door) door.rotation.y = THREE.MathUtils.degToRad(-90);
+                const door2 = this.scene1Objects.door2;
+
+                // Reset Doors to CLOSED Position (Matches end of Scene 5)
+                if (door) {
+                    door.rotation.y = 0;
+                    door.position.set(-27.5, 18.025, 36);
+                }
+                if (door2) {
+                    door2.rotation.y = Math.PI;
+                    door2.position.set(-26.5, 18.025, 36);
+                }
 
                 const blocker = document.getElementById('blocker');
                 if (blocker) blocker.style.display = 'block';

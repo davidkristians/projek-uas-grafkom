@@ -24,7 +24,7 @@ export class StoryManager {
         this.scene2Objects = new Scene2(scene, assetManager);
         this.scene3Objects = new Scene3(this.scene2Objects); // Logic Dialog
         this.scene4Objects = new Scene4(scene, assetManager, this.scene2Objects);
-        this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects); // Init Scene 5
+        this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects, this.scene1Objects);
 
         // Shots
         this.scene1Shots = new Scene1Shots();

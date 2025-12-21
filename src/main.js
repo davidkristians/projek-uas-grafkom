@@ -22,14 +22,70 @@ const playerControls = new FreeRoamControls(camera, document.body);
 
 // 4. Setup Managers
 const assetManager = new AssetManager();
-let director = null; 
+let director = null;
 
 // 5. Load Assets & Start Movie
 assetManager.loadAssets(() => {
-    console.log("Assets Ready! Starting Movie...");
-    
+    console.log("Assets Ready! Waiting for user to start...");
+
+    // Create Start Screen
+    const startScreen = document.createElement('div');
+    startScreen.style.position = 'absolute';
+    startScreen.style.top = '0';
+    startScreen.style.left = '0';
+    startScreen.style.width = '100%';
+    startScreen.style.height = '100%';
+    startScreen.style.backgroundColor = 'black';
+    startScreen.style.display = 'flex';
+    startScreen.style.flexDirection = 'column';
+    startScreen.style.justifyContent = 'center';
+    startScreen.style.alignItems = 'center';
+    startScreen.style.zIndex = '9999';
+    startScreen.style.cursor = 'pointer';
+
+    const title = document.createElement('div');
+    title.innerText = "MINECRAFT CINEMATIC";
+    title.style.color = 'white';
+    title.style.fontSize = '40px';
+    title.style.fontFamily = "'Minecraft', sans-serif";
+    title.style.marginBottom = '20px';
+
+    const subtitle = document.createElement('div');
+    subtitle.innerText = "Click to Start";
+    subtitle.style.color = '#ffff55';
+    subtitle.style.fontSize = '24px';
+    subtitle.style.fontFamily = "'Minecraft', sans-serif";
+    subtitle.style.animation = 'blink 1s infinite';
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+
+    startScreen.appendChild(title);
+    startScreen.appendChild(subtitle);
+    document.body.appendChild(startScreen);
+
+    // Setup Director
     director = new StoryManager(scene, camera, assetManager, sunLight, playerControls);
-    director.startScene1();
+
+    // Wait for click to start
+    startScreen.addEventListener('click', () => {
+        startScreen.style.display = 'none';
+
+        // This resuming context is key for audio to work immediately
+        if (THREE.AudioContext.getContext().state === 'suspended') {
+            THREE.AudioContext.getContext().resume();
+        }
+
+        console.log("🎬 Starting Movie...");
+        director.startScene1();
+    });
 });
 
 // 6. Handle Resize
@@ -84,7 +140,7 @@ window.addEventListener('click', (event) => {
 
     if (intersects.length > 0) {
         const hitObject = intersects[0].object;
-        
+
         console.log("🎯 OBJEK TERDETEKSI:");
         console.log("-----------------------");
         console.log("Nama Object :", hitObject.name);
@@ -96,13 +152,14 @@ window.addEventListener('click', (event) => {
         // Agar kamu yakin objek mana yang kena klik
         if (hitObject.material) {
             const originalEmissive = hitObject.material.emissive ? hitObject.material.emissive.getHex() : 0x000000;
-            
+
             // Ubah jadi merah terang
-            if(hitObject.material.emissive) hitObject.material.emissive.setHex(0xff0000);
-            
+            if (hitObject.material.emissive) hitObject.material.emissive.setHex(0xff0000);
+
             // Balikin warna asli setelah 0.5 detik
             setTimeout(() => {
-                if(hitObject.material.emissive) hitObject.material.emissive.setHex(originalEmissive);
+                if (hitObject.material.emissive) hitObject.material.emissive.setHex(originalEmissive);
             }, 500);
         }
-    }});
+    }
+});

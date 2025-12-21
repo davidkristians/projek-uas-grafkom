@@ -40,13 +40,33 @@ export class StoryManager {
         // UI
         this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAH STEVE");
         this.fadeOverlay = this.createFadeOverlay();
+
         this.cinematicBars = this.createCinematicBars();
+        this.endingOverlay = this.createEndingOverlay(); // [NEW] Logo & Blur Overlay
 
         window.addEventListener('keydown', (event) => {
             if (event.code === 'KeyR' && this.isCinematic) {
                 this.forceFreeRoam();
             }
+            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].includes(event.code)) {
+                this.keysPressed.add(event.code);
+            }
         });
+        window.addEventListener('keyup', (event) => {
+            if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'].includes(event.code)) {
+                this.keysPressed.delete(event.code);
+            }
+        });
+
+        // Audio State
+        this.listener = new THREE.AudioListener();
+        if (this.camera) this.camera.add(this.listener);
+        this.sounds = {};
+        this.keysPressed = new Set();
+        this.doorOpenPlayed = false;
+        this.doorClosePlayed = false;
+        this.doorClosePlayed = false;
+        this.mobsPlayed = false;
     }
 
     startScene1() {
@@ -55,6 +75,17 @@ export class StoryManager {
 
         this.scene1Objects.setup();
         this.scene1Shots.reset(this.camera);
+
+        this.setupAudio(); // [NEW] Setup Audio
+        // Play Main BGM (Minecraft.mp3) start from 1:03
+        if (this.sounds['bgm_minecraft']) {
+            const bgm = this.sounds['bgm_minecraft'];
+            if (!bgm.isPlaying) {
+                bgm.offset = 63; // Start at 1:03
+                bgm.play();
+            }
+        }
+
         this.scene2Objects.setup();
         this.scene3Objects.setup();
         this.scene4Objects.setup();
@@ -89,6 +120,9 @@ export class StoryManager {
             if (this.fadeOverlay) this.fadeOverlay.style.opacity = '0';
         }
 
+        // Handle Audio Logic (Walking, etc)
+        this.handleWalkingSound();
+
         // ===========================================
         // 🎬 SCENE 1 (Interior) - 12 Detik
         // ===========================================
@@ -114,6 +148,13 @@ export class StoryManager {
                     door.position.x = THREE.MathUtils.lerp(-27.5, -28.25, dProg);
                     door2.rotation.y = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(180), THREE.MathUtils.degToRad(270), dProg);
                     door2.position.x = THREE.MathUtils.lerp(-26.5, -25.75, dProg);
+
+                    // [AUDIO] Door Open
+                    if (!this.doorOpenPlayed && this.sounds['door_open']) {
+                        this.sounds['door_open'].play();
+                        this.doorOpenPlayed = true;
+                    }
+
                 } else if (progress > endOpen) {
                     door.rotation.y = THREE.MathUtils.degToRad(-90);
                     door2.rotation.y = THREE.MathUtils.degToRad(270);
@@ -174,14 +215,31 @@ export class StoryManager {
             this.scene3Shots.update(this.camera, this.timer, alexHead, currentState);
 
             // Transisi Pertanyaan
-            if (this.timer > 7.0) {
+            // Transisi Pertanyaan
+            // [UPDATE] User requested -1s headstart (was 7.0) -> Now 6.0
+            // Correlates with 'Nod' animation at t=5.0s in Scene3Shots.js
+            if (this.timer > 6.0) {
                 if (currentState === 1) {
                     this.scene3Objects.setQuestionData(2);
+
+                    // [AUDIO] Click 1 (First Question Nod)
+                    if (this.sounds['click']) {
+                        if (this.sounds['click'].isPlaying) this.sounds['click'].stop();
+                        this.sounds['click'].play();
+                    }
+
                     this.timer = 0;
                 } else if (currentState === 2) {
                     // Start Response Phase
                     this.scene3Objects.state = 3; // Set state to 3 for Camera LookAt Alex
                     this.scene3Objects.showResponse("Oke, semangat!");
+
+                    // [AUDIO] Click 2 (Second Question Nod/Response)
+                    if (this.sounds['click']) {
+                        if (this.sounds['click'].isPlaying) this.sounds['click'].stop();
+                        this.sounds['click'].play();
+                    }
+
                     this.timer = 3;
                 } else if (currentState === 3) {
                     // Wait 1 second then move to Scene 4
@@ -208,6 +266,38 @@ export class StoryManager {
             const currentPos = this.scene4Objects.getCurrentPosition();
             this.scene4Shots.update(this.camera, currentPos, this.scene4Objects.currentPhase, this.scene4Objects.phaseTimer);
 
+            // [AUDIO] Trigger Scene 4 Sounds
+            const phase = this.scene4Objects.currentPhase;
+            const pTime = this.scene4Objects.phaseTimer;
+
+            // 1. Steve at Furnace (Frying Sound)
+            if (phase === 'steve_at_furnace' && pTime < 0.1) {
+                if (this.sounds['frying'] && !this.sounds['frying'].isPlaying) {
+                    this.sounds['frying'].play();
+                }
+            }
+
+            // 2. Alex at Chest/Crafting (Anvil Sound)
+            // 2. Alex at Chest/Crafting (Anvil Sound)
+            if (phase === 'alex_at_chest' && pTime < 0.1) {
+                if (this.sounds['anvil'] && !this.sounds['anvil'].isPlaying) {
+                    this.sounds['anvil'].play();
+
+                    // [AUDIO] Repeat Anvil 1 more time
+                    setTimeout(() => {
+                        if (this.scene4Objects.currentPhase === 'alex_at_chest' && this.sounds['anvil']) {
+                            if (this.sounds['anvil'].isPlaying) this.sounds['anvil'].stop();
+                            this.sounds['anvil'].play();
+                        }
+                    }, 800);
+                }
+            }
+
+            // [AUDIO] STOP Frying Sound if not Steve anymore
+            if (phase !== 'steve_at_furnace' && this.sounds['frying'] && this.sounds['frying'].isPlaying) {
+                this.sounds['frying'].stop();
+            }
+
             // Handle Fade Out di Scene 4 (saat Alex di chest)
             if (this.scene4Objects.currentPhase === 'alex_at_chest') {
                 const chestTimer = this.scene4Objects.phaseTimer;
@@ -232,6 +322,10 @@ export class StoryManager {
                 if (this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
                 if (this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
 
+                // [AUDIO] Stop Frying/Anvil sounds if playing
+                if (this.sounds['frying'] && this.sounds['frying'].isPlaying) this.sounds['frying'].stop();
+                if (this.sounds['anvil'] && this.sounds['anvil'].isPlaying) this.sounds['anvil'].stop();
+
                 // Mulai Scene 5 & Pass SunLight untuk trigger Night Mode
                 this.scene5Objects.start(this.sunLight);
 
@@ -249,6 +343,16 @@ export class StoryManager {
                         }
                     }, 4000);
                 }
+
+                // [AUDIO] TRANSITION TO NIGHT
+                // 1. Fade out Minecraft BGM
+                if (this.sounds['bgm_minecraft'] && this.sounds['bgm_minecraft'].isPlaying) {
+                    this.fadeOutSound(this.sounds['bgm_minecraft'], 2.0);
+                }
+                // 2. Play Night BGM (cave21.mp3)
+                if (this.sounds['bgm_night']) {
+                    this.sounds['bgm_night'].play();
+                }
             }
         }
         // ===========================================
@@ -256,8 +360,8 @@ export class StoryManager {
         // ===========================================
 
         else if (this.sceneStep === 5) {
-            // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
-            const durationS5 = 20.0;
+            // UBAH DURASI JADI 30.0 (Extra 10s untuk Logo, previously 5s)
+            const durationS5 = 30.0;
 
             // FADE IN SCENE 5
             if (this.timer < 2.0) {
@@ -270,21 +374,45 @@ export class StoryManager {
             this.scene5Objects.update(safeDelta);
             this.scene5Shots.update(this.camera, this.timer);
 
-            // Close Doors Animation (18s - 20s)
-            if (this.timer >= 18.0) {
-                const door = this.scene1Objects.door;
-                const door2 = this.scene1Objects.door2;
-                if (door && door2) {
-                    const t = Math.min((this.timer - 18.0) / 0.5, 1.0); // Cepat menutup (0.5s)
+            // [AUDIO] Scene 5 Triggers
+            // Door Close Sound (at 19.6s)
+            if (this.timer >= 19.6 && !this.doorClosePlayed) {
+                if (this.sounds['door_close']) this.sounds['door_close'].play();
+                this.doorClosePlayed = true;
 
-                    // Door 1: Rot (-90 -> 0), PosX (-28.25 -> -27.5)
-                    door.rotation.y = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(-90), THREE.MathUtils.degToRad(0), t);
-                    door.position.x = THREE.MathUtils.lerp(-28.25, -27.5, t);
-
-                    // Door 2: Rot (270 -> 180), PosX (-25.75 -> -26.5)
-                    door2.rotation.y = THREE.MathUtils.lerp(THREE.MathUtils.degToRad(270), THREE.MathUtils.degToRad(180), t);
-                    door2.position.x = THREE.MathUtils.lerp(-25.75, -26.5, t);
+                // [AUDIO] Switch back to Day BGM
+                if (this.sounds['bgm_night'] && this.sounds['bgm_night'].isPlaying) {
+                    this.fadeOutSound(this.sounds['bgm_night'], 1.0);
                 }
+
+                // [AUDIO] STOP Heartbeat
+                if (this.sounds['heartbeat'] && this.sounds['heartbeat'].isPlaying) {
+                    this.sounds['heartbeat'].stop();
+                }
+
+                if (this.sounds['bgm_minecraft']) {
+                    const bgm = this.sounds['bgm_minecraft'];
+                    bgm.setVolume(0.5); // Reset volume
+                    bgm.play();
+                }
+            }
+
+            // Mob Sounds (Shortly after start, e.g., 5s)
+            if (this.timer > 5.0 && !this.mobsPlayed) {
+                this.playMobSounds();
+                this.mobsPlayed = true;
+            }
+
+            // --- ENDING SEQUENCE (Blur + Logo) ---
+            if (this.timer > 20.0) {
+                // Blur Effect (0px -> 10px)
+                const blurProg = Math.min((this.timer - 20.0) / 2.0, 1.0);
+                this.endingOverlay.container.style.backdropFilter = `blur(${blurProg * 8}px) brightness(${1.0 - (blurProg * 0.3)})`;
+
+                // Logo Fade In (Started slightly after blur)
+                const logoProg = Math.min(Math.max((this.timer - 21.0) / 2.0, 0), 1.0);
+                this.endingOverlay.logo.style.opacity = logoProg;
+                this.endingOverlay.logo.style.transform = `scale(${1.0 + (0.1 * (1 - logoProg))})`; // Subtle zoom out
             }
 
             if (this.timer >= durationS5) {
@@ -335,6 +463,34 @@ export class StoryManager {
         bottomBar.style.transition = 'bottom 1s ease-in-out';
         document.body.appendChild(topBar); document.body.appendChild(bottomBar);
         return { top: topBar, bottom: bottomBar };
+        return { top: topBar, bottom: bottomBar };
+    }
+
+    createEndingOverlay() {
+        // Container Full Screen
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.top = '0'; container.style.left = '0';
+        container.style.width = '100vw'; container.style.height = '100vh';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        container.style.zIndex = '1001'; // Di atas title/bar
+        container.style.pointerEvents = 'none'; // Biar click tembus
+        container.style.transition = 'backdrop-filter 0.5s';
+
+        // Logo Image
+        const logo = document.createElement('img');
+        logo.src = 'resources/scene5/Minecraft-Logo-2011-2015.png';
+        logo.style.width = '40%';
+        logo.style.maxWidth = '600px';
+        logo.style.opacity = '0'; // Awal hidden
+        logo.style.transition = 'opacity 1s, transform 3s';
+
+        container.appendChild(logo);
+        document.body.appendChild(container);
+
+        return { container, logo };
     }
 
     forceFreeRoam() {
@@ -348,7 +504,13 @@ export class StoryManager {
             this.isCinematic = false;
             this.sceneStep = 0;
             if (this.subtitle) this.subtitle.style.opacity = '0';
+            if (this.subtitle) this.subtitle.style.opacity = '0';
             if (this.fadeOverlay) this.fadeOverlay.style.display = 'none';
+            if (this.endingOverlay) {
+                this.endingOverlay.container.style.display = 'none'; // Hide Logo
+                this.endingOverlay.logo.style.opacity = '0';
+                this.endingOverlay.container.style.backdropFilter = 'blur(0px)';
+            }
             if (this.cinematicBars) {
                 this.cinematicBars.top.style.top = '-15%';
                 this.cinematicBars.bottom.style.bottom = '-15%';
@@ -380,21 +542,113 @@ export class StoryManager {
                 this.controls.enabled = true;
 
                 const door = this.scene1Objects.door;
-                const door2 = this.scene1Objects.door2; // Add door2 reference
+                const door2 = this.scene1Objects.door2;
 
-                // Ensure doors are CLOSED in Free Roam
+                // Reset Doors to CLOSED Position (Matches end of Scene 5)
                 if (door) {
-                    door.rotation.y = THREE.MathUtils.degToRad(0);
-                    door.position.x = -27.5;
+                    door.rotation.y = 0;
+                    door.position.set(-27.5, 18.025, 36);
                 }
                 if (door2) {
-                    door2.rotation.y = THREE.MathUtils.degToRad(180);
-                    door2.position.x = -26.5;
+                    door2.rotation.y = Math.PI;
+                    door2.position.set(-26.5, 18.025, 36);
                 }
 
                 const blocker = document.getElementById('blocker');
                 if (blocker) blocker.style.display = 'block';
             }
         }
+    }
+
+    setupAudio() {
+        const createSound = (name, loop = false, volume = 0.5) => {
+            const buffer = this.assets.getAudio(name);
+            if (buffer) {
+                const sound = new THREE.Audio(this.listener);
+                sound.setBuffer(buffer);
+                sound.setLoop(loop);
+                sound.setVolume(volume);
+                this.sounds[name] = sound;
+            }
+        };
+
+        createSound('bgm_minecraft', false, 0.5);
+        createSound('bgm_night', false, 0.7);
+        createSound('door_open', false, 0.8);
+        createSound('door_close', false, 0.8);
+        createSound('walk', true, 0.6);
+        createSound('click', false, 0.8);
+        createSound('frying', false, 0.6);
+        createSound('anvil', false, 0.7);
+        createSound('heartbeat', false, 0.9); // Louder for tension
+        createSound('mob_skeleton', false, 0.6);
+        createSound('mob_zombie', false, 0.6);
+        createSound('mob_enderman', false, 0.6);
+    }
+
+    handleWalkingSound() {
+        if (!this.sounds['walk']) return;
+        const walkSound = this.sounds['walk'];
+        let isWalking = false;
+
+        if (this.isCinematic) {
+            // Scene 2 (Walk)
+            if (this.sceneStep === 2 && this.timer < 12.0) isWalking = true;
+            // Scene 4 (Steve/Alex Walk)
+            if (this.sceneStep === 4) {
+                const phase = this.scene4Objects.currentPhase;
+                if (phase === 'steve_walking' || phase === 'alex_walking') isWalking = true;
+            }
+        }
+        // else {
+        //     // Free Roam - DISABLED as per request
+        //     if (this.controls && this.controls.enabled && this.keysPressed.size > 0) {
+        //         isWalking = false; 
+        //     }
+        // }
+
+        if (isWalking) {
+            if (!walkSound.isPlaying) walkSound.play();
+        } else {
+            if (walkSound.isPlaying) walkSound.pause(); // pause so it resumes or stop to restart? walk usually loop, so stop/play is fine.
+        }
+    }
+
+    fadeOutSound(sound, duration) {
+        if (!sound || !sound.isPlaying) return;
+        const startVolume = sound.getVolume();
+        const startTime = Date.now();
+
+        const fadeInterval = setInterval(() => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const t = elapsed / duration;
+            if (t >= 1) {
+                sound.setVolume(0);
+                sound.stop();
+                sound.setVolume(startVolume); // Reset for next use
+                clearInterval(fadeInterval);
+            } else {
+                sound.setVolume(startVolume * (1 - t));
+            }
+        }, 50);
+    }
+
+    playMobSounds() {
+        // [AUDIO] Start Heartbeat
+        if (this.sounds['heartbeat'] && !this.sounds['heartbeat'].isPlaying) {
+            this.sounds['heartbeat'].play();
+        }
+
+        // Play sequence of mobs (Repeated 3x)
+        const mobs = ['mob_skeleton', 'mob_zombie', 'mob_enderman'];
+        const sequence = [...mobs, ...mobs, ...mobs]; // Repeat list 3x
+        sequence.forEach((name, index) => {
+            setTimeout(() => {
+                if (this.sounds[name]) {
+                    if (this.sounds[name].isPlaying) this.sounds[name].stop();
+                    this.sounds[name].play();
+                }
+            }, index * 800);
+        });
     }
 }

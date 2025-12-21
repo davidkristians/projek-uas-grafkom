@@ -7,20 +7,18 @@ export class Scene5 {
     constructor(scene, assetManager, scene2Objects, scene1Objects) {
         this.scene = scene;
         this.assets = assetManager;
-        this.scene2 = scene2Objects; 
-        this.scene1 = scene1Objects; 
+        this.scene2 = scene2Objects;
+        this.scene1 = scene1Objects;
 
         this.mobs = [];
         this.isActive = false;
-        
+
         this.doorTarget = new THREE.Vector3(-27.19, 19.70, 39.20);
-        this.mobSpeed = 0.6; 
-        
-        // List lampu api untuk efek flicker
-        this.fireLights = []; 
-        
-        this.timer = 0; 
-        this.defaultEnvIntensity = 1.0; 
+        this.mobSpeed = 0.6;
+
+        this.fireLights = [];
+        this.timer = 0;
+        this.defaultEnvIntensity = 1.0;
         this.defaultBgIntensity = 1.0;
     }
 
@@ -29,59 +27,73 @@ export class Scene5 {
         this.setupMobs();
 
         // 1. LAMPU DALAM RUMAH (Indoor)
-        // Posisi manual di dekat Steve/Alex
-        const indoorLight = new THREE.PointLight(0xffaa00, 15, 20, 2);
+        const indoorLight = new THREE.PointLight(0xffaa00, 20, 30, 2);
         indoorLight.position.set(-27, 21, 33);
         indoorLight.castShadow = true;
         indoorLight.shadow.bias = -0.0001;
         indoorLight.visible = false;
         this.scene.add(indoorLight);
-        this.fireLights.push(indoorLight); // Masukkan ke list flicker
+        this.fireLights.push(indoorLight);
 
-        // 2. LAMPU OBOR PILAR (Outdoor - Penerang Mobs)
-        // Kita cari object mesh obor pilar berdasarkan nama yang Anda berikan
+        // 2. LAMPU OBOR PILAR (Outdoor)
         const pillarTorchName = 'projek_uas_grafkom__-566_32_203_to_-332_319_461_42';
-        
-        // Kita cari saat setup, tapi kadang map belum full load, jadi kita cek lagi di start()
         this.pillarTorchMesh = this.scene.getObjectByName(pillarTorchName);
-        
+
         if (this.pillarTorchMesh) {
             console.log("✅ Obor Pilar Ditemukan!");
             this.setupPillarLight(this.pillarTorchMesh);
-        } else {
-            console.warn("⚠️ Obor Pilar belum ketemu di setup, akan dicoba lagi saat start.");
         }
     }
 
     setupPillarLight(mesh) {
-        // Buat Lampu untuk Obor Luar
-        // Intensity besar (40) dan Distance jauh (40) agar menerangi halaman
-        const pillarLight = new THREE.PointLight(0xff6600, 40, 40, 2);
-        
-        // Geser sedikit posisi lampu dari titik pusat mesh agar tidak tertelan tembok
-        // Kita asumsi mesh obor ada di dinding, jadi kita majukan sedikit
-        pillarLight.position.set(0, 0.5, 0.5); 
-        
+        // [PERBAIKAN DIFFUSE]
+        // Intensity dinaikkan drastis ke 500 agar "banjir cahaya".
+        // Distance 300 agar jangkauannya jauh sampai ke hutan.
+        // Decay 1.5 agar cahaya tidak cepat mati.
+        const pillarLight = new THREE.PointLight(0xff4400, 500, 300, 1.5);
+
+        // [PENTING] Geser lampu JAUH dari mesh (Z=5, Y=2) 
+        // supaya cahaya tidak tertutup pilar sendiri. Ini agar DIFFUSE kelihatan di tanah.
+        pillarLight.position.set(0, 2.0, 5.0);
+
         pillarLight.castShadow = true;
         pillarLight.shadow.bias = -0.0001;
-        pillarLight.visible = false; // Nanti dinyalakan pas start
+        pillarLight.shadow.mapSize.width = 2048; // Kualitas bayangan tinggi
+        pillarLight.shadow.mapSize.height = 2048;
 
-        // Tempelkan lampu SEBAGAI ANAK dari mesh obor
-        // Jadi kalau obor gerak/rotasi, lampu ikut
+        pillarLight.visible = false;
+
         mesh.add(pillarLight);
         this.fireLights.push(pillarLight);
 
-        // Buat Mesh Obor-nya Menyala (Emissive)
+        // Efek Glow Obor
         if (mesh.material) {
-            // Clone material agar tidak merusak obor lain jika sharing material
             mesh.material = mesh.material.clone();
             mesh.material.emissive.set(0xffaa00);
-            mesh.material.emissiveIntensity = 5.0; // Glow terang
+            mesh.material.emissiveIntensity = 20.0; // Glow super terang
         }
     }
 
+    // Fungsi Helper untuk membuat efek Specular (Mengkilap)
+    applySpecularMaterial(model) {
+        if (!model) return;
+        model.traverse((child) => {
+            if (child.isMesh && child.material) {
+                // [PERBAIKAN SPECULAR]
+                // Roughness 0.2 = Seperti basah/minyak/plastik licin -> Pantulan cahaya TAJAM
+                // Metalness 0.1 = Sedikit sentuhan logam agar pantulan lebih kontras
+                child.material.roughness = 0.2;
+                child.material.metalness = 0.1;
+
+                // Pastikan bayangan aktif
+                child.castShadow = true;
+                child.receiveShadow = true;
+            }
+        });
+    }
+
     setupMobs() {
-        const mobTypes = ['zombie', 'skeleton', 'spider', 'creeper', 'enderman','skeleton', 'spider', 'creeper', 'enderman'];
+        const mobTypes = ['zombie', 'skeleton', 'spider', 'creeper', 'enderman', 'skeleton', 'spider', 'creeper', 'enderman'];
         const spawnPoints = [
             new THREE.Vector3(-66, 19, 52), new THREE.Vector3(-31, 16.1, 58),
             new THREE.Vector3(-50, 19, 49), new THREE.Vector3(-60, 17.05, 50),
@@ -96,43 +108,27 @@ export class Scene5 {
             if (model) {
                 // Fix Circular Structure
                 const originalMixer = model.userData.mixer;
-                delete model.userData.mixer; 
+                delete model.userData.mixer;
                 const mob = model.clone();
                 if (originalMixer) model.userData.mixer = originalMixer;
 
-                // Setup Material Mobs (Agar berkilau kena cahaya obor)
-                mob.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        child.material.roughness = 0.5; // Agak mengkilap
-                        child.material.metalness = 0.2; // Sedikit metalik
-                    }
-                });
+                // [UPDATE] Terapkan efek Specular ke Mob
+                this.applySpecularMaterial(mob);
 
                 const spawnPos = spawnPoints[index % spawnPoints.length];
                 mob.position.copy(spawnPos);
-                
-                if (type === 'spider'){
-                    mob.scale.set(0.8, 0.8, 0.8);
-                    mob.rotation.x = Math.PI/2; 
-                    mob.rotation.y = degToRad(90); 
-                    mob.position.y -= 1.95; 
-                } else if (type === 'enderman') {
-                    mob.scale.set(0.05, 0.05, 0.05);
-                    mob.position.y -= 1.35; 
-                } else if (type === 'creeper'){ 
-                    mob.scale.set(0.05, 0.05, 0.05);
-                    mob.position.y += 0.4; 
-                } else if (type === 'skeleton'){
-                     mob.scale.set(0.5, 0.5, 0.5);
-                    mob.position.y -= 2.9; 
-                } else if (type === 'zombie'){
-                    mob.scale.set(0.5, 0.5, 0.5);
-                    mob.position.y += 3; 
-                }
+
+                // Scale adjustment (Sama seperti sebelumnya)
+                if (type === 'spider') { mob.scale.set(0.8, 0.8, 0.8); mob.rotation.x = Math.PI / 2; mob.rotation.y = degToRad(90); mob.position.y -= 1.95; }
+                else if (type === 'enderman') { mob.scale.set(0.05, 0.05, 0.05); mob.position.y -= 1.35; }
+                else if (type === 'creeper') { mob.scale.set(0.05, 0.05, 0.05); mob.position.y += 0.4; }
+                else if (type === 'skeleton') { mob.scale.set(0.5, 0.5, 0.5); mob.position.y -= 2.9; }
+                else if (type === 'zombie') { mob.scale.set(0.5, 0.5, 0.5); mob.position.y += 3; }
+
                 mob.visible = false;
-                
+
                 const mixer = new THREE.AnimationMixer(mob);
-                mob.userData.mixer = mixer; 
+                mob.userData.mixer = mixer;
                 const anims = model.userData.animations || [];
                 if (anims.length > 0) {
                     let walkClip = anims.find(c => c.name.toLowerCase().includes('walk')) || anims[0];
@@ -147,20 +143,19 @@ export class Scene5 {
     start(sunLight) {
         console.log("🎬 Action: Scene 5 (Night Mode ON)");
         this.isActive = true;
-        this.timer = 0; 
+        this.timer = 0;
 
-        // --- Coba cari ulang obor pilar jika di setup belum ketemu ---
         if (!this.pillarTorchMesh) {
             const pillarTorchName = 'projek_uas_grafkom__-566_32_203_to_-332_319_461_42';
             this.pillarTorchMesh = this.scene.getObjectByName(pillarTorchName);
             if (this.pillarTorchMesh) this.setupPillarLight(this.pillarTorchMesh);
         }
 
-        // --- Lighting & Env ---
+        // --- Lighting ---
         this.defaultEnvIntensity = this.scene.environmentIntensity !== undefined ? this.scene.environmentIntensity : 0.5;
         this.defaultBgIntensity = this.scene.backgroundIntensity !== undefined ? this.scene.backgroundIntensity : 0.5;
-        this.scene.environmentIntensity = 0.05; 
-        this.scene.backgroundIntensity = 0.05; 
+        this.scene.environmentIntensity = 0.05;
+        this.scene.backgroundIntensity = 0.05;
 
         // --- 1. SETTING GELAP (ENV & BACKGROUND) ---
         // Simpan nilai lama (fallback 0.5 jika undefined)
@@ -192,19 +187,15 @@ export class Scene5 {
         });
 
         if (sunLight) {
-            sunLight.intensity = 0.1; 
-            sunLight.color.setHex(0x112244); 
+            sunLight.intensity = 0.1;
+            sunLight.color.setHex(0x112244);
         }
         this.scene.traverse((child) => {
-            if (child.isAmbientLight) child.intensity = 0.05; 
+            if (child.isAmbientLight) child.intensity = 0.05;
         });
 
-        // --- NYALAKAN SEMUA LAMPU API (Indoor & Outdoor) ---
-        this.fireLights.forEach(light => {
-            light.visible = true;
-        });
+        this.fireLights.forEach(light => { light.visible = true; });
 
-        // --- Emissive pada Obor Indoor (Scene 1) ---
         if (this.scene1 && this.scene1.torch) {
             this.scene1.torch.traverse((child) => {
                 if (child.isMesh) {
@@ -214,24 +205,30 @@ export class Scene5 {
             });
         }
 
-        // --- Posisi Actor ---
+        // --- SETUP STEVE & ALEX (SPECULAR) ---
         const steve = this.scene2.steveStatic;
         const alex = this.scene2.alex;
 
         if (steve) {
             steve.position.set(-27.36, 18.82, 32.73);
             steve.visible = true;
-            steve.lookAt(this.doorTarget); 
+            steve.lookAt(this.doorTarget);
+
+            // [BARU] Tambahkan Specular ke Steve
+            this.applySpecularMaterial(steve);
         }
         if (alex) {
             alex.position.set(-26.52, 17.63, 34.12);
             alex.visible = true;
             alex.lookAt(this.doorTarget);
+
+            // [BARU] Tambahkan Specular ke Alex
+            this.applySpecularMaterial(alex);
         }
 
-        // --- Reset Pintu ---
-        if (this.scene1 && this.scene1.door) this.scene1.door.rotation.y = degToRad(-90); 
-        if (this.scene1 && this.scene1.door2) this.scene1.door2.rotation.y = degToRad(270); 
+        // Reset Pintu
+        if (this.scene1 && this.scene1.door) this.scene1.door.rotation.y = degToRad(-90);
+        if (this.scene1 && this.scene1.door2) this.scene1.door2.rotation.y = degToRad(270);
 
         this.mobs.forEach(mob => mob.visible = true);
     }
@@ -239,37 +236,56 @@ export class Scene5 {
     update(delta) {
         if (!this.isActive) return;
 
-        this.timer += delta; 
+        this.timer += delta;
 
-        // ✅ ANIMASI FLICKER UNTUK SEMUA LAMPU OBOR (Indoor & Outdoor)
+        // FLICKER EFFECT
         const flickerSpeed = 10;
-        const flickerRange = 0.2; // Persentase variasi (20%)
-        
+        const flickerRange = 0.2;
+
         this.fireLights.forEach(light => {
             if (light.visible) {
-                // Simpan intensitas dasar di userData jika belum ada
                 if (!light.userData.baseIntensity) light.userData.baseIntensity = light.intensity;
-                
                 const base = light.userData.baseIntensity;
-                // Variasi acak per frame
                 const noise = Math.sin(this.timer * flickerSpeed) * 0.5 + Math.random() * 0.5;
                 light.intensity = base + (base * flickerRange * noise);
             }
         });
 
-        // --- TUTUP PINTU INSTAN ---
-        if (this.timer > 19.85 && this.scene1) {
+        // PINTU TUTUP ANIMASI (Slam Effect: 19.6s - 19.8s)
+        if (this.timer >= 19.6 && this.scene1) {
             const door = this.scene1.door;
             const door2 = this.scene1.door2;
+
             if (door && door2) {
-                door.position.set(-27.5, 18.025, 35.66);
-                door2.position.set(-26.5, 18.025, 35.66);
-                door.rotation.y = 0; 
-                door2.rotation.y = Math.PI;
+                // Durasi animasi 0.2 detik (Cepat/Slam)
+                const t = Math.min(Math.max((this.timer - 19.6) / 0.2, 0), 1);
+
+                // Easing BackIn agar terasa seperti "dibanting"
+                // t = t * t * t; // (Optional: Cubic Easing)
+
+                // Door 1 (Kiri): 
+                // Rotation: -90 deg -> 0 deg
+                // Position X: -28.25 -> -27.5
+                const rStart1 = THREE.MathUtils.degToRad(-90);
+                const rEnd1 = 0;
+                door.rotation.y = THREE.MathUtils.lerp(rStart1, rEnd1, t);
+                door.position.x = THREE.MathUtils.lerp(-28.25, -27.5, t);
+
+                // Door 2 (Kanan): 
+                // Rotation: 270 deg -> 180 deg (Math.PI)
+                // Position X: -25.75 -> -26.5
+                const rStart2 = THREE.MathUtils.degToRad(270);
+                const rEnd2 = Math.PI;
+                door2.rotation.y = THREE.MathUtils.lerp(rStart2, rEnd2, t);
+                door2.position.x = THREE.MathUtils.lerp(-25.75, -26.5, t);
+
+                // Keep Y and Z constant as per Scene 1 defaults
+                door.position.y = 18.025; door.position.z = 36;
+                door2.position.y = 18.025; door2.position.z = 36;
             }
         }
 
-        // --- UPDATE MOBS ---
+        // UPDATE MOBS
         this.mobs.forEach(mob => {
             if (mob.userData.mixer) mob.userData.mixer.update(delta);
             const currentPos = mob.position;

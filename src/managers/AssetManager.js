@@ -4,7 +4,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 export class AssetManager {
     constructor() {
         this.loader = new GLTFLoader();
+        this.audioLoader = new THREE.AudioLoader();
         this.assets = {};
+        this.audioBuffers = {};
         this.mixers = [];
     }
 
@@ -43,8 +45,24 @@ export class AssetManager {
             { name: 'enderman', url: '/resources/scene5/enderman.glb' }
         ];
 
+        const audioToLoad = [
+            { name: 'bgm_minecraft', url: '/sound/1-08. Minecraft.mp3' },
+            { name: 'bgm_night', url: '/sound/cave21.mp3' },
+            { name: 'door_open', url: '/sound/MC Door Open.mp3' },
+            { name: 'door_close', url: '/sound/MC Door Close.mp3' },
+            { name: 'walk', url: '/sound/minecraft-grass-walking-sound-effect.mp3' },
+            { name: 'click', url: '/sound/minecraft---menu-click-2-made-with-Voicemod.mp3' },
+            { name: 'frying', url: '/sound/zapsplat_food_frying_pepper_and_onions_pan_stir_with_wooden_spoon_11799-1.mp3' },
+            { name: 'anvil', url: '/sound/anvil-use-minecraft-sound-sound-effect-for-editing.mp3' },
+            { name: 'heartbeat', url: '/sound/heartbeat-slow-to-fast.wav' },
+            // Mobs
+            { name: 'mob_skeleton', url: '/sound/mobs/minecraft-skeleton-bone.mp3' },
+            { name: 'mob_zombie', url: '/sound/mobs/old-sound-of-zombie-in-minecraft.mp3' },
+            { name: 'mob_enderman', url: '/sound/mobs/teleport1_Cw1ot9l.mp3' }
+        ];
+
         let loadedCount = 0;
-        const totalAssets = assetsToLoad.length;
+        const totalAssets = assetsToLoad.length + audioToLoad.length;
 
         const checkLoadStatus = () => {
             loadedCount++;
@@ -94,8 +112,25 @@ export class AssetManager {
                 }
             );
         });
+
+        audioToLoad.forEach(item => {
+            this.audioLoader.load(
+                item.url,
+                (buffer) => {
+                    this.audioBuffers[item.name] = buffer;
+                    console.log(`🎵 Loaded Audio: ${item.name}`);
+                    checkLoadStatus();
+                },
+                undefined,
+                (err) => {
+                    console.error(`❌ Error loading audio ${item.name}:`, err);
+                    checkLoadStatus();
+                }
+            );
+        });
     }
 
     get(name) { return this.assets[name]; }
+    getAudio(name) { return this.audioBuffers[name]; }
     update(delta) { this.mixers.forEach(mixer => mixer.update(delta)); }
 }

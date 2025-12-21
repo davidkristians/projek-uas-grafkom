@@ -27,21 +27,21 @@ export class Scene2Shots {
             camera.position.set(-26.44, 19.55, 32.55);
             
             // 2. Tentukan Titik Awal & Titik Akhir Noleh
-            // Awal: Lihat Pintu (-26.72, 19.26, 41.00)
             const lookStart = new THREE.Vector3(-26.72, 19.26, 41.00);
-            
-            // Akhir: Lihat ke Kiri (Kita geser X atau Z targetnya)
-            // Asumsi: Menggeser X ke positif/negatif akan membuat efek menoleh
             const lookLeft = new THREE.Vector3(-20.0, 19.26, 41.00); // Geser X target
 
-            // 3. Hitung Progress (0% sampai 100% dalam 2 detik)
+            // 3. Hitung Progress
             const panProgress = timer / splitTime; 
 
-            // 4. Gerakkan Target Pandangan (LerpVektor)
-            // Ini akan membuat efek "YAW" (Geleng) secara halus
-            this.currentLookAt.lerpVectors(lookStart, lookLeft, panProgress * 0.5); // *0.5 agar tidak terlalu cepat
-
+            // 4. Gerakkan Target Pandangan
+            this.currentLookAt.lerpVectors(lookStart, lookLeft, panProgress * 0.5); 
             camera.lookAt(this.currentLookAt);
+
+            // Pastikan FOV Normal di awal
+            if (camera.fov !== 50) {
+                camera.fov = 50;
+                camera.updateProjectionMatrix();
+            }
         } 
         
         // ==========================================
@@ -69,10 +69,23 @@ export class Scene2Shots {
             }
 
             // 3. Smooth Rotation (Lerp)
-            // Ini membuat kamera tidak patah leher saat target berubah
             this.currentLookAt.lerp(targetPos, 0.1);
-            
             camera.lookAt(this.currentLookAt);
+
+            // ========================================================
+            // ✅ TEORI ZOOM OUT OPTIK (LENS EFFECT)
+            // ========================================================
+            // Pada 20% terakhir animasi, kita ubah FOV membesar (Zoom Out)
+            if (safeT > 0.8) {
+                // Normalisasi waktu Zoom (0.0 sampai 1.0)
+                const zoomProgress = (safeT - 0.8) / 0.2; 
+                const smoothZoom = zoomProgress * zoomProgress; // Easing
+
+                // Lerp FOV dari 50 (Normal) ke 70 (Wide/Jauh)
+                const newFov = THREE.MathUtils.lerp(50, 70, smoothZoom);
+                camera.fov = newFov;
+                camera.updateProjectionMatrix(); // Wajib update matrix lensa
+            } 
         }
     }
 }

@@ -72,7 +72,7 @@ export class AssetManager {
         };
 
         const realisticWaterMaterial = new THREE.MeshPhysicalMaterial({
-            color: 0x0088ff, transmission: 1.0, opacity: 1.0, metalness: 0, roughness: 0.05,
+            color: 0x0088ff, transmission: 1.0, opacity: 0.7, metalness: 0, roughness: 0.05,
             ior: 1.33, thickness: 1.5, specularIntensity: 1.0, envMapIntensity: 1.0, side: THREE.DoubleSide, transparent: true, depthWrite: false
         });
 

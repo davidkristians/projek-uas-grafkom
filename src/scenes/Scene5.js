@@ -54,7 +54,7 @@ export class Scene5 {
     setupPillarLight(mesh) {
         // Buat Lampu untuk Obor Luar
         // Intensity besar (40) dan Distance jauh (40) agar menerangi halaman
-        const pillarLight = new THREE.PointLight(0xff6600, 100, 40, 2);
+        const pillarLight = new THREE.PointLight(0xff6600, 40, 40, 2);
         
         // Geser sedikit posisi lampu dari titik pusat mesh agar tidak tertelan tembok
         // Kita asumsi mesh obor ada di dinding, jadi kita majukan sedikit
@@ -226,7 +226,7 @@ export class Scene5 {
         });
 
         // --- TUTUP PINTU INSTAN ---
-        if (this.timer > 19.75 && this.scene1) {
+        if (this.timer > 19.85 && this.scene1) {
             const door = this.scene1.door;
             const door2 = this.scene1.door2;
             if (door && door2) {

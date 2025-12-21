@@ -15,7 +15,7 @@ export class Scene5Shots {
         this.orbitCurve.tension = 0.5; // Kelengkungan
 
         // --- 2. KOORDINAT ZOOM ---
-        this.zoomCamPos = new THREE.Vector3(-25.84, 30.03, 71.19);
+        this.zoomCamPos = new THREE.Vector3(-27.01, 25.87, 70.45);
         
         // --- 3. TARGET LIHAT (PINTU) ---
         this.doorTarget = new THREE.Vector3(-27.19, 19.70, 39.20);
@@ -71,10 +71,10 @@ export class Scene5Shots {
 
             // Efek Zoom In dengan mengubah FOV (Field of View)
             // FOV 50 (Normal) -> FOV 15 (Zoom Telephoto)
-            const t = Math.min((timer - 15.0) / 5.0, 1.0);
+            const t = Math.min((timer - 14.0) / 5.0, 1.0);
             const smoothT = t * t * (3 - 2 * t);
             
-            const newFov = THREE.MathUtils.lerp(50, 15, smoothT);
+            const newFov = THREE.MathUtils.lerp(50, 14, smoothT);
             camera.fov = newFov;
             camera.updateProjectionMatrix(); // WAJIB update projection matrix setiap ubah FOV
         }

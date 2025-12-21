@@ -24,7 +24,7 @@ export class StoryManager {
         this.scene2Objects = new Scene2(scene, assetManager);
         this.scene3Objects = new Scene3(this.scene2Objects); // Logic Dialog
         this.scene4Objects = new Scene4(scene, assetManager, this.scene2Objects);
-        this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects); // Init Scene 5
+        this.scene5Objects = new Scene5(scene, assetManager, this.scene2Objects, this.scene1Objects);
 
         // Shots
         this.scene1Shots = new Scene1Shots();
@@ -38,7 +38,7 @@ export class StoryManager {
         this.timer = 0;
 
         // UI
-        this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAHNYA STEVE");
+        this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAH STEVE");
         this.fadeOverlay = this.createFadeOverlay();
         this.cinematicBars = this.createCinematicBars();
 
@@ -128,7 +128,7 @@ export class StoryManager {
                 this.timer = 0;
 
                 if (this.subtitle) {
-                    this.subtitle.innerText = "KETEMU AYANK";
+                    this.subtitle.innerText = "BERTEMU DENGAN ALEX";
                     this.subtitle.style.opacity = '1';
                     setTimeout(() => { if (this.subtitle) this.subtitle.style.opacity = '0'; }, 4000);
                 }
@@ -179,15 +179,22 @@ export class StoryManager {
                     this.scene3Objects.setQuestionData(2);
                     this.timer = 0;
                 } else if (currentState === 2) {
-                    // Selesai Scene3, pindah ke Scene4
-                    this.scene3Objects.end();
-                    this.sceneStep = 4;
-                    this.timer = 0;
-                    this.scene4Objects.start();
+                    // Start Response Phase
+                    this.scene3Objects.state = 3; // Set state to 3 for Camera LookAt Alex
+                    this.scene3Objects.showResponse("Oke, semangat!");
+                    this.timer = 3;
+                } else if (currentState === 3) {
+                    // Wait 1 second then move to Scene 4
+                    if (this.timer > 6) {
+                        this.scene3Objects.end();
+                        this.sceneStep = 4;
+                        this.timer = 0;
+                        this.scene4Objects.start();
 
-                    // Setup kamera untuk Scene4
-                    const stevePos = this.scene4Objects.stevePathPoints[0];
-                    this.scene4Shots.setupCamera(this.camera, stevePos);
+                        // Setup kamera untuk Scene4
+                        const stevePos = this.scene4Objects.stevePathPoints[0];
+                        this.scene4Shots.setupCamera(this.camera, stevePos);
+                    }
                 }
             }
         }
@@ -200,6 +207,19 @@ export class StoryManager {
             // Update kamera ikuti karakter
             const currentPos = this.scene4Objects.getCurrentPosition();
             this.scene4Shots.update(this.camera, currentPos, this.scene4Objects.currentPhase, this.scene4Objects.phaseTimer);
+
+            // Handle Fade Out di Scene 4 (saat Alex di chest)
+            if (this.scene4Objects.currentPhase === 'alex_at_chest') {
+                const chestTimer = this.scene4Objects.phaseTimer;
+                // Fade out di 2 detik terakhir (dari total 6s) -> mulai detik ke-4
+                if (chestTimer > 4.0) {
+                    if (this.fadeOverlay) {
+                        const fadeVal = (chestTimer - 4.0) / 2.0; // 0 to 1
+                        this.fadeOverlay.style.opacity = Math.min(fadeVal, 1.0);
+                        this.fadeOverlay.style.background = 'black'; // Ensure plain black
+                    }
+                }
+            }
 
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {
@@ -238,6 +258,14 @@ export class StoryManager {
         else if (this.sceneStep === 5) {
             // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
             const durationS5 = 20.0;
+
+            // FADE IN SCENE 5
+            if (this.timer < 2.0) {
+                if (this.fadeOverlay) {
+                    const val = 1.0 - (this.timer / 2.0);
+                    this.fadeOverlay.style.opacity = Math.max(val, 0);
+                }
+            }
 
             this.scene5Objects.update(safeDelta);
             this.scene5Shots.update(this.camera, this.timer);

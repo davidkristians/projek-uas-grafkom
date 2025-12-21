@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 export class Scene3 {
     constructor(scene2Objects) {
-        this.scene2 = scene2Objects; 
+        this.scene2 = scene2Objects;
         this.isActive = false;
         this.ui = this.createUI();
-        this.state = 0; 
+        this.state = 0;
         this.alexHeadPos = new THREE.Vector3();
     }
 
@@ -39,7 +39,7 @@ export class Scene3 {
     start() {
         console.log("🗣️ Action: Scene 3 Start");
         this.isActive = true;
-        this.state = 1; 
+        this.state = 1;
         this.ui.container.style.display = 'block';
 
         // [PENTING] Sembunyikan Steve saat ini juga (karena mode FPV)
@@ -58,11 +58,18 @@ export class Scene3 {
         this.ui.question.style.opacity = '0';
 
         if (qIndex === 1) {
-            this.qData = { q: "Pagi! Sudah siap untuk bekerja?", l: "Malas banget", r: "Siap!!" };
+            this.qData = { q: "Pagi! Siap untuk bekerja?", l: "Gamau, malas", r: "Pasti dong!" };
         } else {
             this.qData = { q: "Kamu mau masak atau crafting?", l: "Masak", r: "Crafting" };
         }
         this.ui.question.innerText = this.qData.q;
+    }
+
+    showResponse(text) {
+        this.ui.choiceL.style.opacity = '0';
+        this.ui.choiceR.style.opacity = '0';
+        this.ui.question.style.opacity = '1';
+        this.ui.question.innerText = text;
     }
 
     update(delta, timer, camera) {
@@ -75,9 +82,12 @@ export class Scene3 {
         if (t < 1.0) question.style.opacity = '1';
         else if (t > 2.0 && t < 2.5) question.style.opacity = '0';
 
-        if (t > 2.5) {
+        if (t > 2.5 && this.state !== 3) {
             choiceL.style.opacity = '1'; choiceL.innerText = this.qData.l;
             choiceR.style.opacity = '1'; choiceR.innerText = this.qData.r;
+        } else if (this.state === 3) {
+            choiceL.style.opacity = '0';
+            choiceR.style.opacity = '0';
         }
 
         // Highlight
@@ -93,8 +103,8 @@ export class Scene3 {
         // Atur posisi Teks melayang di sebelah kiri & kanan Alex
         // Alex ada di x: -21.47, z: 23.28
         // Kita geser X nya
-        const leftPos = new THREE.Vector3(-23.5, 19.5, 23.28); 
-        const rightPos = new THREE.Vector3(-19.5, 19.5, 23.28); 
+        const leftPos = new THREE.Vector3(-23.5, 19.5, 23.28);
+        const rightPos = new THREE.Vector3(-19.5, 19.5, 23.28);
 
         this.projectToScreen(leftPos, this.ui.choiceL, camera);
         this.projectToScreen(rightPos, this.ui.choiceR, camera);
@@ -112,14 +122,14 @@ export class Scene3 {
             // Pakai fixed position agar lebih stabil
             element.style.left = `${x}px`;
             element.style.top = `${y}px`;
-            element.style.transform = 'translate(-50%, -50%)'; 
+            element.style.transform = 'translate(-50%, -50%)';
         }
     }
 
     end() {
         this.isActive = false;
         this.ui.container.style.display = 'none';
-        
+
         // Munculkan kembali Steve untuk mode Free Roam
         if (this.scene2.steveStatic) {
             this.scene2.steveStatic.visible = true;

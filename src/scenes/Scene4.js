@@ -105,9 +105,9 @@ export class Scene4 {
         } else if (this.currentPhase === 'alex_walking') {
             this.updateAlexWalking(delta);
         } else if (this.currentPhase === 'alex_at_chest') {
-            // Diam di chest, menunggu scene selesai (3 detik)
+            // Diam di chest, menunggu scene selesai (6 detik - extended for fade)
             this.phaseTimer += delta;
-            if (this.phaseTimer >= 3.0) {
+            if (this.phaseTimer >= 6.0) {
                 console.log("🎬 Scene 4 Cinematic Finished -> Enable Free Roam");
                 this.currentPhase = 'done';
             }

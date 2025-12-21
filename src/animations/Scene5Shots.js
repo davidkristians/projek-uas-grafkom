@@ -2,46 +2,56 @@ import * as THREE from 'three';
 
 export class Scene5Shots {
     constructor() {
-        // --- 1. KOORDINAT ORBIT (JALUR KURVA) ---
-        // Kita gunakan CatmullRomCurve3 agar pergerakan melewati 4 titik ini melengkung halus
-        this.orbitPoints = [
-            new THREE.Vector3(-66.66, 30.03, 52.40), // Titik 1
-            new THREE.Vector3(-50.43, 30.03, 46.09), // Titik 2 (Urutan disesuaikan agar alurnya logis)
-            new THREE.Vector3(-31.28, 30.03, 75.15), // Titik 3
-            new THREE.Vector3(-23.22, 30.03, 43.10)  // Titik 4
-        ];
+        // --- ORBIT CONFIGURATION (CLASSIC MATH) ---
+        // Titik tengah orbit (Pusat putaran) -> Rumah
+        this.center = new THREE.Vector3(-27, 20, 35);
+        
+        // Jari-jari (Radius) orbit
+        // Kita hitung rata-rata jarak dari titik-titik Anda sebelumnya ke pusat
+        this.radius = 40.0; 
 
-        this.orbitCurve = new THREE.CatmullRomCurve3(this.orbitPoints);
-        this.orbitCurve.tension = 0.5; // Kelengkungan
+        // Sudut Awal (Start Angle) & Sudut Akhir (End Angle)
+        // Kita sesuaikan agar posisi start mirip dengan (-66, 30, 52)
+        this.angleStart = Math.PI;       // Mulai dari belakang kiri
+        this.angleEnd = Math.PI * 0.2;   // Berhenti di depan agak kanan
+        
+        // Tinggi kamera saat orbit
+        this.orbitHeight = 30.0;
 
-        // --- 2. KOORDINAT ZOOM ---
-        this.zoomCamPos = new THREE.Vector3(-25.19, 25.70, 60.20);
-
+        // --- 2. KOORDINAT ZOOM (TARGET AKHIR ORBIT) ---
+        // Kita set target akhir orbit agar pas dengan posisi zoom nanti
+        // x = center.x + radius * cos(angleEnd)
+        // z = center.z + radius * sin(angleEnd)
+        this.zoomCamPos = new THREE.Vector3(-27.01, 25.87, 70.45);
+        
         // --- 3. TARGET LIHAT (PINTU) ---
         this.doorTarget = new THREE.Vector3(-27.19, 19.70, 39.20);
-
-        // Target tengah untuk fase orbit (agar kamera selalu melihat ke rumah)
-        this.houseCenter = new THREE.Vector3(-27, 20, 35);
     }
 
     update(camera, timer) {
-        // Total Durasi Scene 5 kita anggap 20 detik
-        // 0 - 12 detik: Orbit
+        // Total Durasi Scene 5 = 20 detik
+        // 0 - 12 detik: Orbit (Sin/Cos)
         // 12 - 15 detik: Transisi ke Posisi Zoom
         // 15 - 20 detik: Zoom In Effect (FOV)
 
-        // --- FASE 1: ORBIT (0s - 12s) ---
+        // --- FASE 1: ORBIT CLASSIC (0s - 12s) ---
         if (timer <= 12.0) {
-            // Hitung progress 0.0 sampai 1.0
+            // Hitung progress 0.0 s/d 1.0
             const t = Math.min(timer / 12.0, 1.0);
+            
+            // Interpolasi Sudut dari Start ke End
+            const currentAngle = THREE.MathUtils.lerp(this.angleStart, this.angleEnd, t);
 
-            // Ambil posisi di kurva berdasarkan t
-            const pos = this.orbitCurve.getPointAt(t); // getPointAt membuat gerakan kecepatan konstan
-
-            camera.position.copy(pos);
-            camera.lookAt(this.houseCenter);
-
-            // Reset FOV jaga-jaga
+            // RUMUS MATEMATIKA ORBIT (SIN & COS)
+            // x = cx + r * cos(theta)
+            // z = cz + r * sin(theta)
+            const x = this.center.x + this.radius * Math.cos(currentAngle);
+            const z = this.center.z + this.radius * Math.sin(currentAngle);
+            
+            camera.position.set(x, this.orbitHeight, z);
+            camera.lookAt(this.center);
+            
+            // Reset FOV
             camera.fov = 50;
             camera.updateProjectionMatrix();
         }
@@ -52,14 +62,16 @@ export class Scene5Shots {
             const t = (timer - 12.0) / 3.0;
             const smoothT = t * t * (3 - 2 * t); // Easing smoothstep
 
-            // Posisi akhir orbit (Titik 4)
-            const startPos = this.orbitPoints[this.orbitPoints.length - 1];
-
-            // Lerp (Pindah halus) dari Titik 4 ke Posisi Zoom
+            // Hitung posisi terakhir orbit (Sudut Akhir)
+            const endX = this.center.x + this.radius * Math.cos(this.angleEnd);
+            const endZ = this.center.z + this.radius * Math.sin(this.angleEnd);
+            const startPos = new THREE.Vector3(endX, this.orbitHeight, endZ);
+            
+            // Lerp (Pindah halus) dari Akhir Orbit ke Posisi Zoom
             camera.position.lerpVectors(startPos, this.zoomCamPos, smoothT);
-
-            // Transisi fokus pandangan dari HouseCenter ke Pintu
-            const currentLook = new THREE.Vector3().lerpVectors(this.houseCenter, this.doorTarget, smoothT);
+            
+            // Transisi fokus pandangan dari Pusat Rumah ke Pintu
+            const currentLook = new THREE.Vector3().lerpVectors(this.center, this.doorTarget, smoothT);
             camera.lookAt(currentLook);
         }
 
@@ -70,13 +82,12 @@ export class Scene5Shots {
             camera.lookAt(this.doorTarget);
 
             // Efek Zoom In dengan mengubah FOV (Field of View)
-            // FOV 50 (Normal) -> FOV 15 (Zoom Telephoto)
-            const t = Math.min((timer - 15.0) / 5.0, 1.0);
+            const t = Math.min((timer - 14.0) / 5.0, 1.0);
             const smoothT = t * t * (3 - 2 * t);
-
-            const newFov = THREE.MathUtils.lerp(50, 8, smoothT);
+            
+            const newFov = THREE.MathUtils.lerp(50, 14, smoothT);
             camera.fov = newFov;
-            camera.updateProjectionMatrix(); // WAJIB update projection matrix setiap ubah FOV
+            camera.updateProjectionMatrix(); 
         }
     }
 }

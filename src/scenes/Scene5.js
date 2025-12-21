@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
 export class Scene5 {
     constructor(scene, assetManager, scene2Objects) {
@@ -114,12 +116,32 @@ export class Scene5 {
 
         // --- 1. SETTING GELAP (ENV & BACKGROUND) ---
         // Simpan nilai lama (fallback 0.5 jika undefined)
-        this.defaultEnvIntensity = this.scene.environmentIntensity !== undefined ? this.scene.environmentIntensity : 0.5;
-        this.defaultBgIntensity = this.scene.backgroundIntensity !== undefined ? this.scene.backgroundIntensity : 0.5;
+        // this.defaultEnvIntensity = this.scene.environmentIntensity !== undefined ? this.scene.environmentIntensity : 0.5;
+        // this.defaultBgIntensity = this.scene.backgroundIntensity !== undefined ? this.scene.backgroundIntensity : 0.5;
 
-        // Paksa menjadi sangat gelap
-        this.scene.environmentIntensity = 0.05;
-        this.scene.backgroundIntensity = 0.05;
+        // // Paksa menjadi sangat gelap
+        // this.scene.environmentIntensity = 0.05;
+        // this.scene.backgroundIntensity = 0.05;
+        const pmremGenerator = new THREE.PMREMGenerator(this.scene.renderer || new THREE.WebGLRenderer()); // Optional: kalau mau pre-process
+    
+        new EXRLoader().load('/resources/NightSkyHDRI003_4K_HDR.exr', (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+        
+            // 2. [FIX PIXELATED] Atur Filter agar halus
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    
+    // 3. Matikan Mipmaps (Karena ini background langit, kita tidak butuh mipmaps)
+    texture.generateMipmaps = false;
+
+    // 4. Masukkan ke Scene
+    this.scene.background = texture;
+    this.scene.environment = texture;
+    
+    // 5. Atur Intensitas
+    this.scene.backgroundIntensity = 1.0; 
+    this.scene.environmentIntensity = 0.5;
+        });
 
         // --- 2. SETTING MATAHARI ---
         if (sunLight) {

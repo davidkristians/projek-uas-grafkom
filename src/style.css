@@ -1,3 +1,11 @@
+/* 1. Mendaftarkan Font */
+@font-face {
+    font-family: 'Minecraft'; /* Nama panggilan font */
+    src: url('/fonts/Minecraft.ttf') format('truetype'); /* Lokasi file di folder public */
+    font-weight: normal;
+    font-style: normal;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -101,7 +109,7 @@ button:focus, button:focus-visible { outline: 4px auto -webkit-focus-ring-color;
 .choice-label {
     position: absolute;
     color: #ffff55; /* Warna Kuning Khas Game Voxel */
-    font-family: 'Arial', sans-serif;
+    font-family: 'Minecraft', 'Arial', sans-serif;
     font-size: 24px;
     font-weight: bold;
     text-shadow: 2px 2px 0px #3f3f3f;

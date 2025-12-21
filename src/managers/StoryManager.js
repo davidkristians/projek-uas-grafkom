@@ -38,7 +38,7 @@ export class StoryManager {
         this.timer = 0;
 
         // UI
-        this.subtitle = this.createSubtitle("WELCOME TO STEVE'S HOUSE");
+        this.subtitle = this.createSubtitle("SELAMAT DATANG DI RUMAH STEVE");
         this.fadeOverlay = this.createFadeOverlay();
         this.cinematicBars = this.createCinematicBars();
 
@@ -128,7 +128,7 @@ export class StoryManager {
                 this.timer = 0;
 
                 if (this.subtitle) {
-                    this.subtitle.innerText = "MEETING ALEX";
+                    this.subtitle.innerText = "BERTEMU DENGAN ALEX";
                     this.subtitle.style.opacity = '1';
                     setTimeout(() => { if (this.subtitle) this.subtitle.style.opacity = '0'; }, 4000);
                 }
@@ -179,15 +179,22 @@ export class StoryManager {
                     this.scene3Objects.setQuestionData(2);
                     this.timer = 0;
                 } else if (currentState === 2) {
-                    // Selesai Scene3, pindah ke Scene4
-                    this.scene3Objects.end();
-                    this.sceneStep = 4;
-                    this.timer = 0;
-                    this.scene4Objects.start();
+                    // Start Response Phase
+                    this.scene3Objects.state = 3; // Set state to 3 for Camera LookAt Alex
+                    this.scene3Objects.showResponse("Oke, semangat!");
+                    this.timer = 3;
+                } else if (currentState === 3) {
+                    // Wait 1 second then move to Scene 4
+                    if (this.timer > 6) {
+                        this.scene3Objects.end();
+                        this.sceneStep = 4;
+                        this.timer = 0;
+                        this.scene4Objects.start();
 
-                    // Setup kamera untuk Scene4
-                    const stevePos = this.scene4Objects.stevePathPoints[0];
-                    this.scene4Shots.setupCamera(this.camera, stevePos);
+                        // Setup kamera untuk Scene4
+                        const stevePos = this.scene4Objects.stevePathPoints[0];
+                        this.scene4Shots.setupCamera(this.camera, stevePos);
+                    }
                 }
             }
         }
@@ -201,30 +208,43 @@ export class StoryManager {
             const currentPos = this.scene4Objects.getCurrentPosition();
             this.scene4Shots.update(this.camera, currentPos, this.scene4Objects.currentPhase, this.scene4Objects.phaseTimer);
 
+            // Handle Fade Out di Scene 4 (saat Alex di chest)
+            if (this.scene4Objects.currentPhase === 'alex_at_chest') {
+                const chestTimer = this.scene4Objects.phaseTimer;
+                // Fade out di 2 detik terakhir (dari total 6s) -> mulai detik ke-4
+                if (chestTimer > 4.0) {
+                    if (this.fadeOverlay) {
+                        const fadeVal = (chestTimer - 4.0) / 2.0; // 0 to 1
+                        this.fadeOverlay.style.opacity = Math.min(fadeVal, 1.0);
+                        this.fadeOverlay.style.background = 'black'; // Ensure plain black
+                    }
+                }
+            }
+
             // Cek apakah Scene4 sudah selesai
             if (this.scene4Objects.isDone()) {
                 console.log("🎬 Scene 4 selesai, Masuk Scene 5 (Invasion)");
-                
+
                 this.sceneStep = 5;
                 this.timer = 0;
 
                 // Matikan objek scene 4 agar tidak double
-                if(this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
-                if(this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
+                if (this.scene4Objects.steveStatic) this.scene4Objects.steveStatic.visible = false;
+                if (this.scene4Objects.alexStatic) this.scene4Objects.alexStatic.visible = false;
 
                 // Mulai Scene 5 & Pass SunLight untuk trigger Night Mode
                 this.scene5Objects.start(this.sunLight);
 
                 // Tampilkan judul baru
                 if (this.subtitle) {
-                    this.subtitle.innerText = "THE NIGHT INVASION";
+                    this.subtitle.innerText = "MALAM TELAH TIBA";
                     this.subtitle.style.opacity = '1';
                     this.subtitle.style.color = 'red'; // Efek dramatis
                     this.subtitle.style.textShadow = '3px 3px 6px #500';
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         if (this.subtitle) {
                             this.subtitle.style.opacity = '0';
-                            this.subtitle.style.color = 'white'; 
+                            this.subtitle.style.color = 'white';
                             this.subtitle.style.textShadow = '3px 3px 6px black';
                         }
                     }, 4000);
@@ -237,18 +257,26 @@ export class StoryManager {
 
         else if (this.sceneStep === 5) {
             // UBAH DURASI JADI 20.0 AGAR SEMUA FASE SELESAI
-            const durationS5 = 20.0; 
-            
+            const durationS5 = 20.0;
+
+            // FADE IN SCENE 5
+            if (this.timer < 2.0) {
+                if (this.fadeOverlay) {
+                    const val = 1.0 - (this.timer / 2.0);
+                    this.fadeOverlay.style.opacity = Math.max(val, 0);
+                }
+            }
+
             this.scene5Objects.update(safeDelta);
             this.scene5Shots.update(this.camera, this.timer);
 
             if (this.timer >= durationS5) {
                 console.log("🎬 Cinematic Selesai, masuk Free Roam");
-                
+
                 // PENTING: Reset FOV kembali normal sebelum user main
                 this.camera.fov = 50;
                 this.camera.updateProjectionMatrix();
-                
+
                 this.switchMode('FREEROAM');
             }
         }
@@ -305,13 +333,13 @@ export class StoryManager {
             }
 
             console.log("🎮 Mode: Free Roam");
-            
+
             // --- RESET LIGHTING KE SIANG (DAY MODE) ---
             if (this.sunLight) {
                 this.sunLight.intensity = 1.5;
                 this.sunLight.color.setHex(0xffdf80); // Kembali ke kuning hangat
             }
-            
+
             // Reset Ambient Light ke normal
             this.scene.traverse((child) => {
                 if (child.isAmbientLight) {

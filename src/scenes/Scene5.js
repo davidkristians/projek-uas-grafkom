@@ -5,7 +5,6 @@ export class Scene5 {
     constructor(scene, assetManager, scene2Objects, scene1Objects) {
         this.scene = scene;
         this.assets = assetManager;
-<<<<<<< HEAD
         this.scene2 = scene2Objects; 
         this.scene1 = scene1Objects; 
 
@@ -20,21 +19,6 @@ export class Scene5 {
         
         this.timer = 0; 
         this.defaultEnvIntensity = 1.0; 
-=======
-        this.scene2 = scene2Objects;
-
-        this.mobs = [];
-        this.isActive = false;
-
-        // Target Mob (Pintu)
-        this.doorTarget = new THREE.Vector3(-27.19, 19.70, 39.20);
-
-        this.mobSpeed = 1.0;
-        this.torchLight = null;
-
-        // Simpan nilai asli environment agar bisa di-reset nanti
-        this.defaultEnvIntensity = 1.0;
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
         this.defaultBgIntensity = 1.0;
     }
 
@@ -97,32 +81,11 @@ export class Scene5 {
     setupMobs() {
         const mobTypes = ['zombie', 'skeleton', 'spider', 'creeper', 'enderman','skeleton', 'spider', 'creeper', 'enderman'];
         const spawnPoints = [
-<<<<<<< HEAD
             new THREE.Vector3(-66, 19, 52), new THREE.Vector3(-31, 16.1, 58),
             new THREE.Vector3(-50, 19, 49), new THREE.Vector3(-60, 17.05, 50),
             new THREE.Vector3(-40, 19, 50), new THREE.Vector3(-55, 18, 55),
             new THREE.Vector3(-35, 19, 55), new THREE.Vector3(-45, 17, 45),
             new THREE.Vector3(-25, 19, 55)
-=======
-            // Original 5
-            new THREE.Vector3(-66, 19, 52),
-            new THREE.Vector3(-31, 19, 75),
-            new THREE.Vector3(-50, 19, 46),
-            new THREE.Vector3(-60, 19, 50),
-            new THREE.Vector3(-40, 19, 60),
-
-            // New 10 (Distributed x: [-70, -30], z: [40, 80], y: 19)
-            new THREE.Vector3(-68, 19, 55),
-            new THREE.Vector3(-35, 19, 70),
-            new THREE.Vector3(-55, 19, 48),
-            new THREE.Vector3(-62, 19, 58),
-            new THREE.Vector3(-45, 19, 65),
-            new THREE.Vector3(-58, 19, 52),
-            new THREE.Vector3(-38, 19, 72),
-            new THREE.Vector3(-64, 19, 50),
-            new THREE.Vector3(-48, 19, 62),
-            new THREE.Vector3(-52, 19, 44)
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
         ];
 
         spawnPoints.forEach((spawnPos, index) => {
@@ -133,17 +96,10 @@ export class Scene5 {
             if (model) {
                 // Fix Circular Structure
                 const originalMixer = model.userData.mixer;
-<<<<<<< HEAD
                 delete model.userData.mixer; 
-=======
-                delete model.userData.mixer;
-
-                // 2. Clone Model (Sekarang aman karena tidak ada circular reference)
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
                 const mob = model.clone();
                 if (originalMixer) model.userData.mixer = originalMixer;
 
-<<<<<<< HEAD
                 // Setup Material Mobs (Agar berkilau kena cahaya obor)
                 mob.traverse((child) => {
                     if (child.isMesh && child.material) {
@@ -178,28 +134,6 @@ export class Scene5 {
                 const mixer = new THREE.AnimationMixer(mob);
                 mob.userData.mixer = mixer; 
                 const anims = model.userData.animations || [];
-=======
-                // ========================================================
-
-                // Posisi Spawn
-                mob.position.copy(spawnPos);
-
-                // Scale adjustment
-                if (type === 'spider') mob.scale.set(1.2, 1.2, 1.2);
-                else if (type === 'creeper' || type === 'enderman') mob.scale.set(0.1, 0.1, 0.1);
-                else mob.scale.set(0.5, 0.5, 0.5);
-
-                mob.visible = false;
-
-                // 4. BUAT MIXER BARU UNTUK MOB INI
-                // Setiap mob harus punya mixer sendiri, tidak boleh sharing dengan aset utama
-                const mixer = new THREE.AnimationMixer(mob);
-                mob.userData.mixer = mixer;
-
-                // Ambil data animasi dari model asli (ini aman karena cuma data array)
-                const anims = model.userData.animations || [];
-
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
                 if (anims.length > 0) {
                     let walkClip = anims.find(c => c.name.toLowerCase().includes('walk')) || anims[0];
                     mixer.clipAction(walkClip).play();
@@ -225,15 +159,8 @@ export class Scene5 {
         // --- Lighting & Env ---
         this.defaultEnvIntensity = this.scene.environmentIntensity !== undefined ? this.scene.environmentIntensity : 0.5;
         this.defaultBgIntensity = this.scene.backgroundIntensity !== undefined ? this.scene.backgroundIntensity : 0.5;
-<<<<<<< HEAD
         this.scene.environmentIntensity = 0.05; 
         this.scene.backgroundIntensity = 0.05; 
-=======
-
-        // Paksa menjadi sangat gelap
-        this.scene.environmentIntensity = 0.05;
-        this.scene.backgroundIntensity = 0.05;
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
 
         if (sunLight) {
             sunLight.intensity = 0.1; 
@@ -263,22 +190,12 @@ export class Scene5 {
         const alex = this.scene2.alex;
 
         if (steve) {
-<<<<<<< HEAD
             steve.position.set(-27.36, 18.82, 32.73);
-=======
-            steve.position.set(-27.80, 18.82, 33.5);
-            steve.rotation.set(0, 0, 0);
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
             steve.visible = true;
             steve.lookAt(this.doorTarget); 
         }
         if (alex) {
-<<<<<<< HEAD
             alex.position.set(-26.52, 17.63, 34.12);
-=======
-            alex.position.set(-26.52, 17.52, 34.12);
-            alex.rotation.set(0, 0, 0);
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
             alex.visible = true;
             alex.lookAt(this.doorTarget);
         }
@@ -326,11 +243,6 @@ export class Scene5 {
         // --- UPDATE MOBS ---
         this.mobs.forEach(mob => {
             if (mob.userData.mixer) mob.userData.mixer.update(delta);
-<<<<<<< HEAD
-=======
-
-            // Logic Jalan
->>>>>>> 268e49be0007c8b7b77a6982609cdc26294295ce
             const currentPos = mob.position;
             const distance = currentPos.distanceTo(this.doorTarget);
             if (distance > 3) {
